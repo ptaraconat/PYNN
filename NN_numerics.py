@@ -34,7 +34,7 @@ def DMSE(Y,Yhat):
 	return (2/N)*(Y-Yhat)
 
 class MLP_Model():
-	def __init__(self,Lay = [4,3,2,1],learningrate = 0.001,activations = [],dactivations = [], activation = linear,dactivation = dlinear,Loss = MSE,DLoss = DMSE):
+	def __init__(self,Lay = [4,3,2,1],learningrate = 0.001,activations = [],dactivations = [], activation = linear,dactivation = dlinear,Loss = MSE,DLoss = DMSE,algorithm = 'SGD'):
 		Nlay = len(Lay)
 		self.Nlay = Nlay
 		self.Lay = Lay
@@ -53,13 +53,21 @@ class MLP_Model():
 		self.CostFunc = Loss
 		self.DCostFunc = DLoss
 		self.LearningRate = learningrate
+		self.Algorithm = algorithm
 		i = 1
 		while i < Nlay : 
 			nl = Lay[i]
 			nlm1 = Lay[i-1]
 			self.Learned['W'+str(i)] =  np.zeros((nl,nlm1)) + np.random.normal(loc=0.0, scale=1.0)
 			self.Learned['B'+str(i)] = np.zeros((nl,1)) + np.random.normal(loc=0.0, scale=1.0)
+			if self.Algorithm == 'RMSProp' or self.Algorithm == 'Adam': 
+				self.Cache['Sdw'+str(i)] = np.zeros((nl,nlm1))
+				self.Cache['Sdb'+str(i)] = np.zeros((nl,1))
+			if self.Algorithm == 'Momentum' or self.Algorithm == 'Adam':
+				self.Cache['Vdw'+str(i)] = np.zeros((nl,nlm1))
+				self.Cache['Vdb'+str(i)] = np.zeros((nl,1))	
 			i = i + 1 
+		
 	def Summary(self):
 		print('##### Model Summary #####')
 		for i in range(self.Nlay-1):
@@ -112,10 +120,33 @@ class MLP_Model():
 			l = l - 1 
 			
 	def Update(self):
+		#to be reworked 
+		beta1 = 0.9
+		beta2 = 0.999
+		ite = 1
+		epsilon = 1e-8  
+		#
 		l = 1 
 		while l < self.Nlay:
-			self.Learned['W'+str(l)] = self.Learned['W'+str(l)] - self.LearningRate*self.Cache['dW'+str(l)]
-			self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*self.Cache['dB'+str(l)]
+			if self.Algorithm == 'SGD':
+				self.Learned['W'+str(l)] = self.Learned['W'+str(l)] - self.LearningRate*self.Cache['dW'+str(l)]
+				self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*self.Cache['dB'+str(l)]
+			if self.Algorithm == 'Adam' :  
+				#print('Optimization algorithm '+self.Algorithm + 'Not coded yet')
+				# Update Sd
+				self.Cache['Sdw'+str(l)] = beta2*self.Cache['Sdw'+str(l)] + (1-beta2)*self.Cache['dW'+str(l)]**2.
+				self.Cache['Sdb'+str(l)] = beta2*self.Cache['Sdb'+str(l)] + (1-beta2)*self.Cache['dB'+str(l)]**2.
+				# Update Vd
+				self.Cache['Vdw'+str(l)] = beta1*self.Cache['Vdw'+str(l)] + (1-beta1)*self.Cache['dW'+str(l)] 
+				self.Cache['Vdb'+str(l)] = beta1*self.Cache['Vdb'+str(l)] + (1-beta1)*self.Cache['dB'+str(l)] 
+				# Correct Vd and Sd 
+				Vdwc_tmp = self.Cache['Vdw'+str(l)]/(1-beta1**ite)
+				Vdbc_tmp = self.Cache['Vdb'+str(l)]/(1-beta1**ite)
+				Sdwc_tmp = self.Cache['Sdw'+str(l)]/(1-beta2**ite)
+				Sdbc_tmp = self.Cache['Sdb'+str(l)]/(1-beta2**ite)
+				#Update Model weights, using Vd and Sd: to be completed 
+				self.Learned['W'+str(l)] = self.Learned['W'+str(l)] - self.LearningRate*self.Cache['dW'+str(l)]
+				self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*self.Cache['dB'+str(l)]
 			l = l + 1 
 	
 	def Fit(self,X,Yhat,Nmax=1000):
@@ -137,7 +168,7 @@ if __name__ == "__main__":
 	Lay = [4,3,2,2]
 	act = [sigmoid,sigmoid,linear]
 	dact = [dsigmoid,dsigmoid,dlinear]
-	model = MLP_Model(Lay = Lay,learningrate= 0.01,activations = act,dactivations = dact)
+	model = MLP_Model(Lay = Lay,learningrate= 0.01,activations = act,dactivations = dact,algorithm='Adam')
 	model.Summary()
 	# Data 
 	X = np.ones((4,4))
