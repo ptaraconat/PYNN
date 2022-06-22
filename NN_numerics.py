@@ -121,42 +121,47 @@ class MLP_Model():
 			
 	def Update(self):
 		#to be reworked 
-		beta1 = 0.9
-		beta2 = 0.999
-		ite = 1
-		epsilon = 1e-8  
+		beta1 = self.Beta1
+		beta2 = self.Beta2
+		ite = self.Ite
+		epsilon = self.Epsilon 
 		#
 		l = 1 
 		while l < self.Nlay:
 			if self.Algorithm == 'SGD':
 				self.Learned['W'+str(l)] = self.Learned['W'+str(l)] - self.LearningRate*self.Cache['dW'+str(l)]
 				self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*self.Cache['dB'+str(l)]
+				
 			if self.Algorithm == 'Adam' :  
-				#print('Optimization algorithm '+self.Algorithm + 'Not coded yet')
 				# Update Sd
-				self.Cache['Sdw'+str(l)] = beta2*self.Cache['Sdw'+str(l)] + (1-beta2)*self.Cache['dW'+str(l)]**2.
-				self.Cache['Sdb'+str(l)] = beta2*self.Cache['Sdb'+str(l)] + (1-beta2)*self.Cache['dB'+str(l)]**2.
+				self.Cache['Sdw'+str(l)] = beta2*self.Cache['Sdw'+str(l)] + (1-beta2)*np.square(self.Cache['dW'+str(l)])
+				self.Cache['Sdb'+str(l)] = beta2*self.Cache['Sdb'+str(l)] + (1-beta2)*np.square(self.Cache['dB'+str(l)])
 				# Update Vd
 				self.Cache['Vdw'+str(l)] = beta1*self.Cache['Vdw'+str(l)] + (1-beta1)*self.Cache['dW'+str(l)] 
 				self.Cache['Vdb'+str(l)] = beta1*self.Cache['Vdb'+str(l)] + (1-beta1)*self.Cache['dB'+str(l)] 
 				# Correct Vd and Sd 
-				Vdwc_tmp = self.Cache['Vdw'+str(l)]/(1-beta1**ite)
-				Vdbc_tmp = self.Cache['Vdb'+str(l)]/(1-beta1**ite)
-				Sdwc_tmp = self.Cache['Sdw'+str(l)]/(1-beta2**ite)
-				Sdbc_tmp = self.Cache['Sdb'+str(l)]/(1-beta2**ite)
+				Vdwc_tmp = self.Cache['Vdw'+str(l)]/(1-(beta1**ite))
+				Vdbc_tmp = self.Cache['Vdb'+str(l)]/(1-(beta1**ite))
+				Sdwc_tmp = self.Cache['Sdw'+str(l)]/(1-(beta2**ite))
+				Sdbc_tmp = self.Cache['Sdb'+str(l)]/(1-(beta2**ite))
 				#Update Model weights, using Vd and Sd: to be completed 
-				self.Learned['W'+str(l)] = self.Learned['W'+str(l)] - self.LearningRate*self.Cache['dW'+str(l)]
-				self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*self.Cache['dB'+str(l)]
+				self.Learned['W'+str(l)] =  self.Learned['W'+str(l)] - self.LearningRate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
+				self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
 			l = l + 1 
 	
 	def Fit(self,X,Yhat,Nmax=1000):
 		i = 0 
 		err = []
+		self.Ite = 1
+		self.Beta1 = 0.9
+		self.Beta2 = 0.999
+		self.Epsilon = 10e-8
 		while (i < Nmax) :
 			Y = self.Predict(X)
 			loss = self.CalcCurrentLoss(Y,Yhat)
 			self.BackProp(Y,Yhat)
 			self.Update()
+			self.Ite = self.Ite + 1 
 			#
 			err = err + [loss]
 			del Y, loss

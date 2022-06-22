@@ -6,7 +6,7 @@ Noutput = 1
 Lay = [Ninput,4,2,Noutput]
 act = [sigmoid,sigmoid,linear]
 dact = [dsigmoid,dsigmoid,dlinear]
-model = MLP_Model(Lay = Lay,learningrate= 0.01,activations = act,dactivations = dact)
+model = MLP_Model(Lay = Lay,learningrate= 0.01,activations = act,dactivations = dact,algorithm='Adam')
 model.Summary()
 # Data 
 Ndata = 100
