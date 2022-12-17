@@ -33,6 +33,64 @@ def DMSE(Y,Yhat):
 	N = np.size(Yhat,0)
 	return (2/N)*(Y-Yhat)
 
+class Model():
+	def __init__(self,layers,loss = 'MSE'):
+		self.layers = layers 
+		if loss == 'MSE' : 
+			self.loss = MSE
+			self.dloss = DMSE
+	
+	def predict(self,inputs): 
+		input_tmp = inputs
+		for layer in self.layers : 
+			layer.forward(input_tmp)
+			input_tmp = layer.cache['A']
+		return input_tmp
+
+class Layer():
+	def __init__(self):
+		self.Name = None
+
+class Dense(Layer):
+	def __init__(self,units,activation ='linear',input_units = None): 
+		self.units = units
+		self.cache = dict()
+		self.bias = np.zeros((units,1))
+		if activation == 'linear':
+			self.activation = linear
+			self.dactivation = dlinear
+		if input_units != None : 
+			self.input_units = input_units
+			self.weights = np.zeros((self.units,self.input_units))
+			
+	def forward(self,input): 
+		W_tmp = self.weights#self.Learned['W'+str(i)]
+		B_tmp = self.bias #self.Learned['B'+str(i)]
+		z_tmp =  np.dot(W_tmp , input) + B_tmp
+		a_tmp = self.activation(z_tmp)#self.Activations[i-1](z_tmp)
+		self.cache['A'] = a_tmp
+		self.cache['Z'] = z_tmp
+		del W_tmp, B_tmp, z_tmp
+		
+	def Backward(self):
+		#
+		dAl_tmp = self.DCostFunc(Y,Yhat)
+		#
+		Zl_tmp = self.Cache['Z'+str(l)]
+		Alm1_tmp = self.Cache['A'+str(l-1)]
+		Wl_tmp = self.Learned['W'+str(l)]
+		M = np.size(Yhat,1)
+		#
+		#dZl_tmp = dAl_tmp * self.DActivation(Zl_tmp) 
+		dZl_tmp = dAl_tmp * self.DActivations[l-1](Zl_tmp) ### minus one because stored in list 
+		dWl_tmp = (1/M) * np.dot(dZl_tmp , np.transpose(Alm1_tmp))
+		dbl_tmp = (1/M) * np.sum(dZl_tmp, axis = 1,keepdims = True)
+		self.Cache['dW'+str(l)] = dWl_tmp
+		self.Cache['dB'+str(l)] = dbl_tmp
+		#
+		dAl_tmp = np.dot(np.transpose(Wl_tmp) , dZl_tmp)
+		del Zl_tmp,Alm1_tmp,Wl_tmp,M,dZl_tmp,dWl_tmp,dbl_tmp
+
 class MLP_Model():
 	def __init__(self,Lay = [4,3,2,1],learningrate = 0.001,activations = [],dactivations = [], activation = linear,dactivation = dlinear,Loss = MSE,DLoss = DMSE,algorithm = 'SGD'):
 		Nlay = len(Lay)
