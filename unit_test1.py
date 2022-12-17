@@ -17,6 +17,24 @@ layer2.weights = W
 
 input = np.array([[1],[1],[1]])
 print(input)
+print(np.shape(input))
+
+layer.forward(input)
+res1 = layer.cache['A']
+print(res1)
+
+layer2.forward(res1)
+res2 = layer2.cache['A']
+print(res2)
+
+model = Model([layer,layer2],loss = 'MSE')
+res3 = model.predict(input)
+print(res3)
+
+#
+input = np.array([[1,1],[1,1],[1,1]])
+print(input)
+print(np.shape(input))
 
 layer.forward(input)
 res1 = layer.cache['A']
