@@ -85,14 +85,14 @@ class Dense(Layer):
 		dZl_tmp = dAl_tmp * self.dactivation(Zl_tmp)#self.DActivations[l-1](Zl_tmp) ### minus one because stored in list 
 		dWl_tmp = (1/M) * np.dot(dZl_tmp , np.transpose(Alm1_tmp))
 		dbl_tmp = (1/M) * np.sum(dZl_tmp, axis = 1,keepdims = True)
-		self.Cache['dW'] = dWl_tmp
-		self.Cache['dB'] = dbl_tmp
+		self.cache['dW'] = dWl_tmp
+		self.cache['dB'] = dbl_tmp
 		#
 		dAl_tmp = np.dot(np.transpose(Wl_tmp) , dZl_tmp)
 		del Zl_tmp,Alm1_tmp,Wl_tmp,M,dZl_tmp,dWl_tmp,dbl_tmp
 		return dAl_tmp
 
-	def Update(self,learning_rate,beta2,Algorithm = 'SGD'):
+	def Update(self,learning_rate,beta1,beta2,epsilon,ite,Algorithm = 'SGD'):
 		if Algorithm == 'SGD':
 			self.weights = self.weights - learning_rate*self.cache['dW']
 			self.bias = self.bias - learning_rate*self.Cache['dB']
@@ -102,17 +102,33 @@ class Dense(Layer):
 			self.cache['Sdw'] = beta2*self.cache['Sdw'] + (1-beta2)*np.square(self.cache['dW'])
 			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.Cache['dB'])
 			# Update Vd
-			self.Cache['Vdw'+str(l)] = beta1*self.Cache['Vdw'+str(l)] + (1-beta1)*self.Cache['dW'+str(l)] 
-			self.Cache['Vdb'+str(l)] = beta1*self.Cache['Vdb'+str(l)] + (1-beta1)*self.Cache['dB'+str(l)] 
+			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.cache['dW'] 
+			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.cache['dB'] 
 			# Correct Vd and Sd 
-			Vdwc_tmp = self.Cache['Vdw'+str(l)]/(1-(beta1**ite))
-			Vdbc_tmp = self.Cache['Vdb'+str(l)]/(1-(beta1**ite))
-			Sdwc_tmp = self.Cache['Sdw'+str(l)]/(1-(beta2**ite))
-			Sdbc_tmp = self.Cache['Sdb'+str(l)]/(1-(beta2**ite))
+			Vdwc_tmp = self.Cache['Vdw']/(1-(beta1**ite))
+			Vdbc_tmp = self.Cache['Vdb']/(1-(beta1**ite))
+			Sdwc_tmp = self.Cache['Sdw']/(1-(beta2**ite))
+			Sdbc_tmp = self.Cache['Sdb']/(1-(beta2**ite))
 			#Update Model weights, using Vd and Sd: to be completed 
-			self.Learned['W'+str(l)] =  self.Learned['W'+str(l)] - self.LearningRate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
-			self.Learned['B'+str(l)] = self.Learned['B'+str(l)] - self.LearningRate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
+			self.weights =  self.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
+			self.bias = self.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
 			 
+class Optimizer():
+	
+	def __init__(self,type = None):
+		self.type = None
+
+class Adam(Optimizer):
+	
+	def __init__(self,learning_rate,beta1, beta2, epsilon):
+		self.beta1 = beta1
+		self.beta2 = beta2
+		self.epsilon = epsilon
+		self.learning_rate = learning_rate
+
+class SGD(Optimizer):
+	def __init__(self,learning_rate):
+		self.learning_rate = learning_rate
 
 class MLP_Model():
 	def __init__(self,Lay = [4,3,2,1],learningrate = 0.001,activations = [],dactivations = [], activation = linear,dactivation = dlinear,Loss = MSE,DLoss = DMSE,algorithm = 'SGD'):
