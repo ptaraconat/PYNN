@@ -34,7 +34,7 @@ def DMSE(Y,Yhat):
 	return (2/N)*(Y-Yhat)
 
 class Model():
-	def __init__(self,layers,loss = 'MSE'):
+	def __init__(self,layers = [],loss = 'MSE'):
 		self.layers = layers 
 		if loss == 'MSE' : 
 			self.loss = MSE
@@ -46,6 +46,50 @@ class Model():
 			layer.forward(input_tmp)
 			input_tmp = layer.cache['A']
 		return input_tmp
+	
+	def backprop(self,Y,Yhat):
+		batch_size = np.size(Y,1)
+		rhs_feed = self.dloss(Y,Yhat)
+		l = len(self.layers)
+		while l > 0: 
+			rhs_feed = self.layers[l].backward(rhs_feed,batch_size)
+			l = l - 1 
+	
+	def update(self):
+		#to be reworked 
+		beta1 = self.Beta1
+		beta2 = self.Beta2
+		ite = self.Ite
+		epsilon = self.Epsilon 
+		learning_rate = self.learning_rate
+		algo = self.algorithm
+		#
+		l = 1 
+		while l < len(self.layers:
+			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algorithm)
+			l = l + 1
+		
+		def Fit(self,X,Yhat,Nmax=1000):
+		i = 0 
+		err = []
+		self.Ite = 1
+		self.Beta1 = 0.9
+		self.Beta2 = 0.999
+		self.Epsilon = 10e-8
+		self.learning_rate = 0.01
+		self.algorithm = 0.01
+		while (i < Nmax) :
+			Y = self.predict(X)
+			loss = self.CalcCurrentLoss(Y,Yhat)
+			self.BackProp(Y,Yhat)
+			self.Update()
+			self.Ite = self.Ite + 1 
+			#
+			err = err + [loss]
+			del Y, loss
+			i = i + 1 
+		return err
+		
 
 class Layer():
 	def __init__(self):
@@ -55,6 +99,11 @@ class Dense(Layer):
 	def __init__(self,units,activation ='linear',input_units = None): 
 		self.units = units
 		self.cache = dict()
+		self.cache[]
+		self.cache['Sdw'+str(i)] = np.zeros((self.units,self.input_units))
+		self.cache['Sdb'+str(i)] = np.zeros((self.units,1))
+		self.cache['Vdw'+str(i)] = np.zeros((self.units,self.input_units))
+		self.cache['Vdb'+str(i)] = np.zeros((self.units,1))
 		self.bias = np.zeros((units,1))
 		if activation == 'linear':
 			self.activation = linear
@@ -70,14 +119,15 @@ class Dense(Layer):
 		a_tmp = self.activation(z_tmp)#self.Activations[i-1](z_tmp)
 		self.cache['A'] = a_tmp
 		self.cache['Z'] = z_tmp
+		self.cache['inputs'] = input
 		del W_tmp, B_tmp, z_tmp
 		
-	def Backward(self,rhs_feed,batch_size):
+	def backward(self,rhs_feed,batch_size):
 		#
 		dAl_tmp = rhs_feed#self.DCostFunc(Y,Yhat)
 		#
 		Zl_tmp = self.cache['Z'+str(l)]
-		Alm1_tmp = prev_lay.cache['A']
+		Alm1_tmp = self.cache['inputs']#prev_lay.cache['A']
 		Wl_tmp = self.weights
 		M = batch_size #np.size(Yhat,1)
 		#
@@ -92,7 +142,7 @@ class Dense(Layer):
 		del Zl_tmp,Alm1_tmp,Wl_tmp,M,dZl_tmp,dWl_tmp,dbl_tmp
 		return dAl_tmp
 
-	def Update(self,learning_rate,beta1,beta2,epsilon,ite,Algorithm = 'SGD'):
+	def update(self,learning_rate,beta1,beta2,epsilon,ite,Algorithm = 'SGD'):
 		if Algorithm == 'SGD':
 			self.weights = self.weights - learning_rate*self.cache['dW']
 			self.bias = self.bias - learning_rate*self.Cache['dB']
@@ -105,10 +155,10 @@ class Dense(Layer):
 			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.cache['dW'] 
 			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.cache['dB'] 
 			# Correct Vd and Sd 
-			Vdwc_tmp = self.Cache['Vdw']/(1-(beta1**ite))
-			Vdbc_tmp = self.Cache['Vdb']/(1-(beta1**ite))
-			Sdwc_tmp = self.Cache['Sdw']/(1-(beta2**ite))
-			Sdbc_tmp = self.Cache['Sdb']/(1-(beta2**ite))
+			Vdwc_tmp = self.cache['Vdw']/(1-(beta1**ite))
+			Vdbc_tmp = self.cache['Vdb']/(1-(beta1**ite))
+			Sdwc_tmp = self.cache['Sdw']/(1-(beta2**ite))
+			Sdbc_tmp = self.cache['Sdb']/(1-(beta2**ite))
 			#Update Model weights, using Vd and Sd: to be completed 
 			self.weights =  self.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
 			self.bias = self.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
