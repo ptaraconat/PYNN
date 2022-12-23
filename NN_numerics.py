@@ -200,17 +200,27 @@ class Layer():
 
 class Dense(Layer):
 	def __init__(self,units,activation ='linear',input_units = None): 
+		'''
+		Inputs 
+		units ::: int ::: Number of units (viz. neurons) in the layer 
+		activation ::: str ::: default = 'linear' choices('linear', 'sigmoid', '', ...) ::: Activation function 
+		input_units ::: int ::: default = None ::: Number of inputs of the layer
+		Outputs 
+		None 
+		'''
 		self.units = units
-		self.cache = dict()
-		self.cache['Sdb'] = np.zeros((self.units,1))
-		self.cache['Vdb'] = np.zeros((self.units,1))
-		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0,size = (units,1))
+		self.cache = dict() # Init Cache dictionary 
+		self.cache['Sdb'] = np.zeros((self.units,1)) # Init 
+		self.cache['Vdb'] = np.zeros((self.units,1)) # Init 
+		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0,size = (units,1)) # Init Biases 
+		## Set the activation 
 		if activation == 'linear':
 			self.activation = linear
 			self.dactivation = dlinear
 		if activation == 'sigmoid':
 			self.activation = sigmoid
 			self.dactivation = dsigmoid
+		## If the number of inputs is provided, then init weights
 		if input_units != None : 
 			self.input_units = input_units
 			self.weights = np.zeros((self.units,self.input_units)) + np.random.normal(loc=0.0, scale=1.0,size = (self.units,self.input_units))
