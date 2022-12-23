@@ -22,81 +22,152 @@ def linear(x):
 #	bot = np.sqrt(2*top)
 #	return top/bot
 	
-def MSE(Y,Yhat):
-	res = np.power(Yhat - Y,2)
+def mean_squared_error(y,yhat):
+	'''
+	Inputs 
+	y ::: numpy.array (Output_Dim,Batch_Size) ::: Predicted Values 
+	yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values 
+	Outputs 
+	res::: float ::: Mean Squared Error between Y and Yhat 
+	'''
+	res = np.power(yhat - y,2)
 	res = np.sum(res,axis = 0,keepdims = True) 
-	N = np.size(Yhat,0)
+	N = np.size(yhat,0)
 	res = res/N
 	return res
 
-def DMSE(Y,Yhat):
-	N = np.size(Yhat,0)
-	return (2/N)*(Y-Yhat)
+def d_mean_squared_error(y,yhat):
+	'''
+	Inputs 
+	y ::: numpy.array (Output_Dim,Batch_Size) ::: Predicted Values 
+	yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values 
+	Outputs 
+	res ::: float ::: Derivative of MSE with respect to Y 
+	'''
+	N = np.size(yhat,0)
+	return (2/N)*(y-yhat)
 
 class Model():
 	def __init__(self,layers = [],loss = 'MSE'):
+		'''
+		Inputs 
+		layers ::: list of NN_numerics.Layers ::: default = [] ::: Sequence of layers defining the model 
+		loss ::: str ::: default = 'MSE' (choose among : 'MSE', '' ...) ::: Loss function used during the model training  
+		Outputs 
+		None
+		'''
 		self.layers = layers 
 		if loss == 'MSE' : 
-			self.loss = MSE
-			self.dloss = DMSE
+			self.loss = mean_squared_error
+			self.dloss = d_mean_squared_error
 	
 	def predict(self,inputs): 
-		input_tmp = inputs
-		for layer in self.layers : 
+		'''
+		Inputs 
+		inputs ::: np.array (Input_Dim,Batch_Size) ::: Input data, for which we want to make a prediction
+		Outputs 
+		input_tmp ::: np.array (Output_Dim, Batch_Size) ::: Model Predictions
+		'''
+		input_tmp = inputs 
+		## Forward layers loop 
+		for layer in self.layers :
+			## Propagate input_tmp through the layer  
 			layer.forward(input_tmp)
+			## Update input_tmp with the layer activations, stored in layer.cache 
 			input_tmp = layer.cache['A']
 		return input_tmp
 	
-	def backprop(self,Y,Yhat):
-		batch_size = np.size(Y,1)
-		rhs_feed = self.dloss(Y,Yhat)
-		l = len(self.layers) - 1
+	def backprop(self,y,yhat):
+		'''
+		Inputs  
+		y ::: numpy.array (Output_Dim,Batch_Size) ::: Predicted Values 
+		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values
+		Outputs 
+		None
+		'''
+		batch_size = np.size(y,1) 
+		rhs_feed = self.dloss(y,yhat) # Init right hand side feed 
+		## Backward layers loop
+		l = len(self.layers) - 1 
 		while l >= 0: 
+			## Back-propagate and update rhs_feed 
 			rhs_feed = self.layers[l].backward(rhs_feed,batch_size)
 			l = l - 1 
 	
 	def update(self):
+		'''
+		Update model weights/biases 
+		Inputs 
+		None 
+		Outputs 
+		None
+		'''
 		#to be reworked 
-		beta1 = self.Beta1
-		beta2 = self.Beta2
-		ite = self.Ite
-		epsilon = self.Epsilon 
+		beta1 = self.beta1
+		beta2 = self.beta2
+		ite = self.ite
+		epsilon = self.epsilon 
 		learning_rate = self.learning_rate
 		algo = self.algorithm
-		#
+		## Forward layers loop 
 		l = 0
 		while l < len(self.layers):
+			## Update the layer 
 			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algo)
 			l = l + 1
 		
-	def calc_loss(self,Y,Yhat): 
-		Nex = np.size(Y,1)
-		err = self.loss(Y,Yhat)
-		loss = np.sum(err)/Nex
+	def calc_loss(self,y,yhat): 
+		'''
+		Inputs 
+		y ::: numpy.array (Output_Dim,Batch_Size) ::: Predicted Values 
+		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values 
+		Outputs 
+		loss ::: float ::: Mean Squared Error between Y and Yhat 
+		'''
+		batch_size = np.size(y,1) # Assess batch_size
+		err = self.loss(y,yhat) # Assess loss 
+		loss = np.sum(err)/batch_size # Normalize loss according to the number of examples 
 		return loss
 		
-	def Fit(self,X,Yhat,Nmax=1000):
-		i = 0 
-		err = []
-		self.Ite = 1
-		self.Beta1 = 0.9
-		self.Beta2 = 0.999
-		self.Epsilon = 10e-8
+	def fit(self,x,yhat,epochs=1000):
+		'''
+		Inputs 
+		x ::: numpy.array (Input_Dim,Batch_Size) ::: Input Values 
+		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values 
+		Epochs ::: int ::: default = 1000 ::: Number of epochs 
+		Outputs 
+		loss ::: float ::: Mean Squared Error between Y and Yhat 
+		'''
+		self.ite = 1
+		self.beta1 = 0.9
+		self.beta2 = 0.999
+		self.epsilon = 10e-8
 		self.learning_rate = 0.01
 		self.algorithm = 'Adam'
-		while (i < Nmax) :
-			Y = self.predict(X)
-			loss = self.calc_loss(Y,Yhat)
-			self.backprop(Y,Yhat)
+		## Training Loop 
+		i = 0 
+		err = []
+		while (i < epochs) :
+			y = self.predict(x)
+			loss = self.calc_loss(y,yhat)
+			self.backprop(y,yhat)
 			self.update()
-			self.Ite = self.Ite + 1 
+			self.ite = self.ite + 1 
 			#
 			err = err + [loss]
-			del Y, loss
+			del y, loss
 			i = i + 1 
 		return err
 		
 	def summary(self):
+		'''
+		Display the model architecture 
+		Inputs 
+		None 
+		Outputs 
+		None
+		'''
+		print('')
 		print('##### Model Summary #####')
 		for i in range(len(self.layers)):
 			print('###########################')
@@ -105,7 +176,15 @@ class Model():
 			print('Biases  ::: ',np.shape(self.layers[i].bias))
 			
 	def disp_learnable(self):
-		print('##### Model Summary #####')
+		'''
+		Display the model parameters 
+		Inputs 
+		None 
+		Outputs 
+		None
+		'''
+		print('')
+		print('##### Model Parameters #####')
 		for i in range(len(self.layers)):
 			print('###########################')
 			print('Layer Number '+str(i+1))
@@ -216,7 +295,7 @@ if __name__ == "__main__":
 	layer2 = Dense(2,activation ='sigmoid',input_units = 3)
 	layer3 = Dense(2,activation ='linear',input_units = 2)
 	model2 = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
-	err2 = model2.Fit(X,Yhat,Nmax = 1000)
+	err2 = model2.fit(X,Yhat)
 	plt.plot(err2)
 	plt.show()
 	

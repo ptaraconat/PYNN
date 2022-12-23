@@ -13,7 +13,7 @@ model = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
 model.summary()
 model.disp_learnable()
 # Learning
-err = model.Fit(X,Yhat,Nmax = 10000)
+err = model.fit(X,Yhat,epochs = 10000)
 model.disp_learnable()
 Y = model.predict(X)
 # Plot Error curve 
@@ -27,5 +27,4 @@ plt.plot(X[0],Y[0],'k-',linewidth = 3)
 #plt.savefig('comp.png',format = 'png')
 plt.show()
 plt.close()
-
 print(Y)
