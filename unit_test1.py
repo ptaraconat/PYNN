@@ -1,7 +1,5 @@
 from NN_numerics import * 
 
-print('hi there')
-
 layer = Dense(2,input_units = 3)
 layer2 = Dense(3,input_units = 2)
 

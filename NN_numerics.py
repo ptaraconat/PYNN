@@ -83,7 +83,7 @@ class Model():
 		self.Beta2 = 0.999
 		self.Epsilon = 10e-8
 		self.learning_rate = 0.01
-		self.algorithm = 'SGD'
+		self.algorithm = 'Adam'
 		while (i < Nmax) :
 			Y = self.predict(X)
 			loss = self.calc_loss(Y,Yhat)
@@ -107,7 +107,7 @@ class Dense(Layer):
 		self.cache = dict()
 		self.cache['Sdb'] = np.zeros((self.units,1))
 		self.cache['Vdb'] = np.zeros((self.units,1))
-		self.bias = np.zeros((units,1))
+		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0)
 		if activation == 'linear':
 			self.activation = linear
 			self.dactivation = dlinear
@@ -116,7 +116,7 @@ class Dense(Layer):
 			self.dactivation = dsigmoid
 		if input_units != None : 
 			self.input_units = input_units
-			self.weights = np.zeros((self.units,self.input_units))
+			self.weights = np.zeros((self.units,self.input_units)) + np.random.normal(loc=0.0, scale=1.0)
 			self.cache['Sdw'] = np.zeros((self.units,self.input_units))
 			self.cache['Vdw'] = np.zeros((self.units,self.input_units))
 			
@@ -158,7 +158,7 @@ class Dense(Layer):
 		if Algorithm == 'Adam' :  
 			# Update Sd
 			self.cache['Sdw'] = beta2*self.cache['Sdw'] + (1-beta2)*np.square(self.cache['dW'])
-			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.Cache['dB'])
+			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.cache['dB'])
 			# Update Vd
 			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.cache['dW'] 
 			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.cache['dB'] 
