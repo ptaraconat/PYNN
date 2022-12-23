@@ -113,7 +113,7 @@ class Model():
 		l = 0
 		while l < len(self.layers):
 			## Update the layer 
-			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algo)
+			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,algorithm = algo)
 			l = l + 1
 		
 	def calc_loss(self,y,yhat): 
@@ -213,6 +213,7 @@ class Dense(Layer):
 		self.cache['Sdb'] = np.zeros((self.units,1)) # Init 
 		self.cache['Vdb'] = np.zeros((self.units,1)) # Init 
 		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0,size = (units,1)) # Init Biases 
+		self.dbias_ = np.zeros((units,1)) # Init DLoss/DB
 		## Set the activation 
 		if activation == 'linear':
 			self.activation = linear
@@ -224,51 +225,84 @@ class Dense(Layer):
 		if input_units != None : 
 			self.input_units = input_units
 			self.weights = np.zeros((self.units,self.input_units)) + np.random.normal(loc=0.0, scale=1.0,size = (self.units,self.input_units))
+			self.dweights_ = np.zeros((self.units,self.input_units)) # Init DLoss/DW
 			self.cache['Sdw'] = np.zeros((self.units,self.input_units))
 			self.cache['Vdw'] = np.zeros((self.units,self.input_units))
 			
 	def forward(self,input): 
-		W_tmp = self.weights#self.Learned['W'+str(i)]
-		B_tmp = self.bias #self.Learned['B'+str(i)]
-		z_tmp =  np.dot(W_tmp , input) + B_tmp
-		a_tmp = self.activation(z_tmp)#self.Activations[i-1](z_tmp)
-		self.cache['A'] = a_tmp
-		self.cache['Z'] = z_tmp
-		self.cache['inputs'] = input
-		del W_tmp, B_tmp, z_tmp
+		'''
+		Inputs 
+		input ::: numpy.array (Prev_Layer_Dim,Batch_Size) ::: Left hand side
+		feed of the layer : Activations from the previous layer, or model
+		input, if this is the first layer of the model. 
+		Outputs 
+		None 
+		'''
+		w_tmp = self.weights # Get layer weights 
+		b_tmp = self.bias # Get layer biases 
+		# Calculate input weighted sum 
+		z_tmp =  np.dot(w_tmp , input) + b_tmp 
+		# Calculate the layer activations 
+		a_tmp = self.activation(z_tmp) 
+		# Store activations in cache (required for backprop)
+		self.cache['A'] = a_tmp 
+		# Store weighted sum in cache (required for backprop)
+		self.cache['Z'] = z_tmp 
+		# Store input (viz activation of prev layer) (required for backprop)
+		self.cache['inputs'] = input 
+		del w_tmp, b_tmp, z_tmp
 		
 	def backward(self,rhs_feed,batch_size):
+		'''
+		Inputs 
+		rhs_feed ::: numpy.array (Next_Layer_Dim,Batch_Size) ::: right hand 
+		side feed : DLoss/DA 
+		batch_size ::: int :: The batch size 
+		Outputs 
+		dal_tmp ::: numpy.array (Layer_Dim,Batch_Size) ::: 
+		'''
+		# Init dal_tmp
+		dal_tmp = rhs_feed
 		#
-		dAl_tmp = rhs_feed#self.DCostFunc(Y,Yhat)
+		zl_tmp = self.cache['Z'] # get weigthed wum of the layer 
+		alm1_tmp = self.cache['inputs'] # get activation of prev layer 
+		wl_tmp = self.weights # get model weights 
 		#
-		Zl_tmp = self.cache['Z']
-		Alm1_tmp = self.cache['inputs']#prev_lay.cache['A']
-		Wl_tmp = self.weights
-		M = batch_size #np.size(Yhat,1)
-		#
-		#dZl_tmp = dAl_tmp * self.DActivation(Zl_tmp) 
-		dZl_tmp = dAl_tmp * self.dactivation(Zl_tmp)#self.DActivations[l-1](Zl_tmp) ### minus one because stored in list 
-		dWl_tmp = (1/M) * np.dot(dZl_tmp , np.transpose(Alm1_tmp))
-		dbl_tmp = (1/M) * np.sum(dZl_tmp, axis = 1,keepdims = True)
-		self.cache['dW'] = dWl_tmp
-		self.cache['dB'] = dbl_tmp
-		#
-		dAl_tmp = np.dot(np.transpose(Wl_tmp) , dZl_tmp)
-		del Zl_tmp,Alm1_tmp,Wl_tmp,M,dZl_tmp,dWl_tmp,dbl_tmp
-		return dAl_tmp
+		dzl_tmp = dal_tmp * self.dactivation(zl_tmp)
+		# Calculate DLoss/DW
+		dwl_tmp = (1/batch_size) * np.dot(dzl_tmp , np.transpose(alm1_tmp))
+		# Calculate DLoss/DB 
+		dbl_tmp = (1/batch_size) * np.sum(dzl_tmp, axis = 1,keepdims = True)
+		# Store weights and bias derivatives 
+		self.dweights_ = dwl_tmp
+		self.dbias_ = dbl_tmp
+		# Update dal_tmp, for the next step (viz previous layer) of backprop
+		dal_tmp = np.dot(np.transpose(wl_tmp) , dzl_tmp)
+		del zl_tmp,alm1_tmp,wl_tmp,dzl_tmp,dwl_tmp,dbl_tmp
+		return dal_tmp
 
-	def update(self,learning_rate,beta1,beta2,epsilon,ite,Algorithm = 'SGD'):
-		if Algorithm == 'SGD':
-			self.weights = self.weights - learning_rate*self.cache['dW']
-			self.bias = self.bias - learning_rate*self.cache['dB']
+	def update(self,learning_rate,beta1,beta2,epsilon,ite,algorithm = 'SGD'):
+		'''
+		learning_rate ::: float :::
+		beta1 ::: float ::: 
+		beta2 ::: float :::
+		epsilon ::: float :::
+		ite ::: int ::: Curent learning iteration 
+		algorithm ::: str ::: default = 'SGD' (choices : 'SGD', 'Adam',) :::
+		optimization algorithm 
+		'''
+		#### To optimize, use optimizer class 
+		if algorithm == 'SGD':
+			self.weights = self.weights - learning_rate*self.dweights_
+			self.bias = self.bias - learning_rate*self.dbias_
 				
-		if Algorithm == 'Adam' :  
+		if algorithm == 'Adam' :  
 			# Update Sd
-			self.cache['Sdw'] = beta2*self.cache['Sdw'] + (1-beta2)*np.square(self.cache['dW'])
-			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.cache['dB'])
+			self.cache['Sdw'] = beta2*self.cache['Sdw'] + (1-beta2)*np.square(self.dweights_)
+			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.dbias_)
 			# Update Vd
-			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.cache['dW'] 
-			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.cache['dB'] 
+			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.dweights_ 
+			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.dbias_ 
 			# Correct Vd and Sd 
 			Vdwc_tmp = self.cache['Vdw']/(1-(beta1**ite))
 			Vdbc_tmp = self.cache['Vdb']/(1-(beta1**ite))
