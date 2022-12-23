@@ -18,7 +18,7 @@ model.disp_learnable()
 Y = model.predict(X)
 # Plot Error curve 
 plt.plot(err) 
-#plt.show()
+plt.show()
 #plt.savefig('err.png',format = 'png')
 plt.close()
 #Test Model 
