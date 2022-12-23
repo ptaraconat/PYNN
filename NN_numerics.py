@@ -173,7 +173,7 @@ class Model():
 		while l < len(self.layers):
 			## Update the layer 
 			#self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,algorithm = algo)
-			self.layers[l].update2(optimizer)
+			self.layers[l].update(optimizer)
 			l = l + 1
 		
 	def calc_loss(self,y,yhat): 
@@ -337,7 +337,7 @@ class Dense(Layer):
 		del zl_tmp,alm1_tmp,wl_tmp,dzl_tmp,dwl_tmp,dbl_tmp
 		return dal_tmp
 
-	def update2(self,optimizer): 
+	def update(self,optimizer): 
 		'''
 		Inputs 
 		optimizer ::: NN_numerics.Optimizer :::
@@ -346,7 +346,8 @@ class Dense(Layer):
 		'''
 		optimizer.update_layer(self)
 
-	def update(self,learning_rate,beta1,beta2,epsilon,ite,algorithm = 'SGD'):
+	# Must be clean 
+	def update2(self,learning_rate,beta1,beta2,epsilon,ite,algorithm = 'SGD'):
 		'''
 		learning_rate ::: float :::
 		beta1 ::: float ::: 
