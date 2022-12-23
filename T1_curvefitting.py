@@ -13,7 +13,9 @@ model = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
 model.summary()
 model.disp_learnable()
 # Learning
-err = model.fit(X,Yhat,epochs = 10000)
+opt1 = Adam()
+opt2 = SGD(learning_rate = 0.01)
+err = model.fit(X,Yhat,optimizer = opt1, epochs = 10000)
 model.disp_learnable()
 Y = model.predict(X)
 # Plot Error curve 

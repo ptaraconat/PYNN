@@ -91,6 +91,7 @@ class Adam(Optimizer):
 
 class SGD(Optimizer):
 	def __init__(self,learning_rate):
+		self.ite = 1 
 		self.algorithm = 'SGD'
 		self.learning_rate = learning_rate
 
@@ -161,19 +162,11 @@ class Model():
 		Outputs 
 		None
 		'''
-		#
-		ite = optimizer.ite
-		beta1 = optimizer.beta1
-		beta2 = optimizer.beta2
-		epsilon = optimizer.epsilon
-		learning_rate = optimizer.learning_rate
-		algo = optimizer.algorithm
 		## Forward layers loop 
 		l = 0
 		while l < len(self.layers):
 			## Update the layer 
-			#self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,algorithm = algo)
-			self.layers[l].update(optimizer)
+			optimizer.update_layer(self.layers[l])
 			l = l + 1
 		
 	def calc_loss(self,y,yhat): 
@@ -335,49 +328,7 @@ class Dense(Layer):
 		# Update dal_tmp, for the next step (viz previous layer) of backprop
 		dal_tmp = np.dot(np.transpose(wl_tmp) , dzl_tmp)
 		del zl_tmp,alm1_tmp,wl_tmp,dzl_tmp,dwl_tmp,dbl_tmp
-		return dal_tmp
-
-	def update(self,optimizer): 
-		'''
-		Inputs 
-		optimizer ::: NN_numerics.Optimizer :::
-		Outputs 
-		None
-		'''
-		optimizer.update_layer(self)
-
-	# Must be clean 
-	def update2(self,learning_rate,beta1,beta2,epsilon,ite,algorithm = 'SGD'):
-		'''
-		learning_rate ::: float :::
-		beta1 ::: float ::: 
-		beta2 ::: float :::
-		epsilon ::: float :::
-		ite ::: int ::: Curent learning iteration 
-		algorithm ::: str ::: default = 'SGD' (choices : 'SGD', 'Adam',) :::
-		optimization algorithm 
-		'''
-		#### To optimize, use optimizer class 
-		if algorithm == 'SGD':
-			self.weights = self.weights - learning_rate*self.dweights_
-			self.bias = self.bias - learning_rate*self.dbias_
-				
-		if algorithm == 'Adam' :  
-			# Update Sd
-			self.cache['Sdw'] = beta2*self.cache['Sdw'] + (1-beta2)*np.square(self.dweights_)
-			self.cache['Sdb'] = beta2*self.cache['Sdb'] + (1-beta2)*np.square(self.dbias_)
-			# Update Vd
-			self.cache['Vdw'] = beta1*self.cache['Vdw'] + (1-beta1)*self.dweights_ 
-			self.cache['Vdb'] = beta1*self.cache['Vdb'] + (1-beta1)*self.dbias_ 
-			# Correct Vd and Sd 
-			Vdwc_tmp = self.cache['Vdw']/(1-(beta1**ite))
-			Vdbc_tmp = self.cache['Vdb']/(1-(beta1**ite))
-			Sdwc_tmp = self.cache['Sdw']/(1-(beta2**ite))
-			Sdbc_tmp = self.cache['Sdb']/(1-(beta2**ite))
-			#Update Model weights, using Vd and Sd: to be completed 
-			self.weights =  self.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
-			self.bias = self.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
-			 
+		return dal_tmp	 
 				
 if __name__ == "__main__":
 	# Data 
@@ -390,6 +341,7 @@ if __name__ == "__main__":
 	layer3 = Dense(2,activation ='linear',input_units = 2)
 	model2 = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
 	err2 = model2.fit(X,Yhat)
+	#err2 = model2.fit(X,Yhat,optimizer = SGD(learning_rate = 0.01))
 	plt.plot(err2)
 	plt.show()
 	
