@@ -13,7 +13,7 @@ model = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
 model.summary()
 model.disp_learnable()
 # Learning
-opt1 = Adam()
+opt1 = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8)
 opt2 = SGD(learning_rate = 0.01)
 err = model.fit(X,Yhat,optimizer = opt1, epochs = 10000)
 model.disp_learnable()
