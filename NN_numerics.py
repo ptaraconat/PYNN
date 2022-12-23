@@ -51,7 +51,7 @@ class Model():
 		batch_size = np.size(Y,1)
 		rhs_feed = self.dloss(Y,Yhat)
 		l = len(self.layers) - 1
-		while l > 0: 
+		while l >= 0: 
 			rhs_feed = self.layers[l].backward(rhs_feed,batch_size)
 			l = l - 1 
 	
@@ -64,7 +64,7 @@ class Model():
 		learning_rate = self.learning_rate
 		algo = self.algorithm
 		#
-		l = 1 
+		l = 0
 		while l < len(self.layers):
 			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algo)
 			l = l + 1
@@ -96,6 +96,24 @@ class Model():
 			i = i + 1 
 		return err
 		
+	def summary(self):
+		print('##### Model Summary #####')
+		for i in range(len(self.layers)):
+			print('###########################')
+			print('Layer Number '+str(i+1))
+			print('Weights ::: ',np.shape(self.layers[i].weights))
+			print('Biases  ::: ',np.shape(self.layers[i].bias))
+			
+	def disp_learnable(self):
+		print('##### Model Summary #####')
+		for i in range(len(self.layers)):
+			print('###########################')
+			print('Layer Number '+str(i+1))
+			print('Weights ::: ')
+			print(self.layers[i].weights)
+			print('Biases  ::: ')
+			print(self.layers[i].bias)
+		
 
 class Layer():
 	def __init__(self):
@@ -107,7 +125,7 @@ class Dense(Layer):
 		self.cache = dict()
 		self.cache['Sdb'] = np.zeros((self.units,1))
 		self.cache['Vdb'] = np.zeros((self.units,1))
-		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0)
+		self.bias = np.zeros((units,1)) + np.random.normal(loc=0.0, scale=1.0,size = (units,1))
 		if activation == 'linear':
 			self.activation = linear
 			self.dactivation = dlinear
@@ -116,7 +134,7 @@ class Dense(Layer):
 			self.dactivation = dsigmoid
 		if input_units != None : 
 			self.input_units = input_units
-			self.weights = np.zeros((self.units,self.input_units)) + np.random.normal(loc=0.0, scale=1.0)
+			self.weights = np.zeros((self.units,self.input_units)) + np.random.normal(loc=0.0, scale=1.0,size = (self.units,self.input_units))
 			self.cache['Sdw'] = np.zeros((self.units,self.input_units))
 			self.cache['Vdw'] = np.zeros((self.units,self.input_units))
 			
