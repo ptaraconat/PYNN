@@ -50,7 +50,7 @@ class Model():
 	def backprop(self,Y,Yhat):
 		batch_size = np.size(Y,1)
 		rhs_feed = self.dloss(Y,Yhat)
-		l = len(self.layers)
+		l = len(self.layers) - 1
 		while l > 0: 
 			rhs_feed = self.layers[l].backward(rhs_feed,batch_size)
 			l = l - 1 
@@ -65,11 +65,17 @@ class Model():
 		algo = self.algorithm
 		#
 		l = 1 
-		while l < len(self.layers:
-			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algorithm)
+		while l < len(self.layers):
+			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,Algorithm = algo)
 			l = l + 1
 		
-		def Fit(self,X,Yhat,Nmax=1000):
+	def calc_loss(self,Y,Yhat): 
+		Nex = np.size(Y,1)
+		err = self.loss(Y,Yhat)
+		loss = np.sum(err)/Nex
+		return loss
+		
+	def Fit(self,X,Yhat,Nmax=1000):
 		i = 0 
 		err = []
 		self.Ite = 1
@@ -77,12 +83,12 @@ class Model():
 		self.Beta2 = 0.999
 		self.Epsilon = 10e-8
 		self.learning_rate = 0.01
-		self.algorithm = 0.01
+		self.algorithm = 'SGD'
 		while (i < Nmax) :
 			Y = self.predict(X)
-			loss = self.CalcCurrentLoss(Y,Yhat)
-			self.BackProp(Y,Yhat)
-			self.Update()
+			loss = self.calc_loss(Y,Yhat)
+			self.backprop(Y,Yhat)
+			self.update()
 			self.Ite = self.Ite + 1 
 			#
 			err = err + [loss]
@@ -99,18 +105,20 @@ class Dense(Layer):
 	def __init__(self,units,activation ='linear',input_units = None): 
 		self.units = units
 		self.cache = dict()
-		self.cache[]
-		self.cache['Sdw'+str(i)] = np.zeros((self.units,self.input_units))
-		self.cache['Sdb'+str(i)] = np.zeros((self.units,1))
-		self.cache['Vdw'+str(i)] = np.zeros((self.units,self.input_units))
-		self.cache['Vdb'+str(i)] = np.zeros((self.units,1))
+		self.cache['Sdb'] = np.zeros((self.units,1))
+		self.cache['Vdb'] = np.zeros((self.units,1))
 		self.bias = np.zeros((units,1))
 		if activation == 'linear':
 			self.activation = linear
 			self.dactivation = dlinear
+		if activation == 'sigmoid':
+			self.activation = sigmoid
+			self.dactivation = dsigmoid
 		if input_units != None : 
 			self.input_units = input_units
 			self.weights = np.zeros((self.units,self.input_units))
+			self.cache['Sdw'] = np.zeros((self.units,self.input_units))
+			self.cache['Vdw'] = np.zeros((self.units,self.input_units))
 			
 	def forward(self,input): 
 		W_tmp = self.weights#self.Learned['W'+str(i)]
@@ -126,7 +134,7 @@ class Dense(Layer):
 		#
 		dAl_tmp = rhs_feed#self.DCostFunc(Y,Yhat)
 		#
-		Zl_tmp = self.cache['Z'+str(l)]
+		Zl_tmp = self.cache['Z']
 		Alm1_tmp = self.cache['inputs']#prev_lay.cache['A']
 		Wl_tmp = self.weights
 		M = batch_size #np.size(Yhat,1)
@@ -145,7 +153,7 @@ class Dense(Layer):
 	def update(self,learning_rate,beta1,beta2,epsilon,ite,Algorithm = 'SGD'):
 		if Algorithm == 'SGD':
 			self.weights = self.weights - learning_rate*self.cache['dW']
-			self.bias = self.bias - learning_rate*self.Cache['dB']
+			self.bias = self.bias - learning_rate*self.cache['dB']
 				
 		if Algorithm == 'Adam' :  
 			# Update Sd
@@ -335,7 +343,20 @@ if __name__ == "__main__":
 	# Plot Error curve 
 	plt.plot(err)
 	plt.show()
+	plt.close()
+	#########
+	#layer1 = Dense(4,activation ='linear',input_units = 4)
+	layer1 = Dense(3,activation ='sigmoid',input_units = 4)
+	layer2 = Dense(2,activation ='sigmoid',input_units = 3)
+	layer3 = Dense(2,activation ='linear',input_units = 2)
+	model2 = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
+	err2 = model2.Fit(X,Yhat,Nmax = 1000)
+	plt.plot(err2)
+	plt.plot(err)
+	plt.show()
 	
+	print(model2.predict(X))
+	print(Yhat)	
 	
 	
 
