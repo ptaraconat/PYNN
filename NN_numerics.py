@@ -47,6 +47,65 @@ def d_mean_squared_error(y,yhat):
 	N = np.size(yhat,0)
 	return (2/N)*(y-yhat)
 
+class Optimizer():
+	
+	def __init__(self,type = None):
+		self.type = None
+
+class Adam(Optimizer):
+	def __init__(self,learning_rate,beta1, beta2, epsilon):
+		self.ite = 1 
+		self.algorithm = 'Adam'
+		self.beta1 = beta1
+		self.beta2 = beta2
+		self.epsilon = epsilon
+		self.learning_rate = learning_rate
+	
+	def update_layer(self,layer):
+		'''
+		Inputs
+		layer ::: NN_numerics.Layer :::
+		Outputs 
+		None
+		'''
+		ite = self.ite
+		beta1 = self.beta1
+		beta2 = self.beta2
+		epsilon = self.epsilon
+		learning_rate = self.learning_rate
+		# Update Sd
+		layer.cache['Sdw'] = beta2*layer.cache['Sdw'] + (1-beta2)*np.square(layer.dweights_)
+		layer.cache['Sdb'] = beta2*layer.cache['Sdb'] + (1-beta2)*np.square(layer.dbias_)
+		# Update Vd
+		layer.cache['Vdw'] = beta1*layer.cache['Vdw'] + (1-beta1)*layer.dweights_ 
+		layer.cache['Vdb'] = beta1*layer.cache['Vdb'] + (1-beta1)*layer.dbias_ 
+		# Correct Vd and Sd 
+		Vdwc_tmp = layer.cache['Vdw']/(1-(beta1**ite))
+		Vdbc_tmp = layer.cache['Vdb']/(1-(beta1**ite))
+		Sdwc_tmp = layer.cache['Sdw']/(1-(beta2**ite))
+		Sdbc_tmp = layer.cache['Sdb']/(1-(beta2**ite))
+		#Update Model weights, using Vd and Sd: to be completed 
+		layer.weights =  layer.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
+		layer.bias = layer.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
+
+
+class SGD(Optimizer):
+	def __init__(self,learning_rate):
+		self.algorithm = 'SGD'
+		self.learning_rate = learning_rate
+
+	def update_layer(self,layer):
+		'''
+		Inputs
+		layer ::: NN_numerics.Layer :::
+		Outputs 
+		None
+		'''
+		learning_rate = self.learning_rate
+		layer.weights = layer.weights - learning_rate*layer.dweights_
+		layer.bias = layer.bias - learning_rate*layer.dbias_
+		
+
 class Model():
 	def __init__(self,layers = [],loss = 'MSE'):
 		'''
@@ -94,26 +153,27 @@ class Model():
 			rhs_feed = self.layers[l].backward(rhs_feed,batch_size)
 			l = l - 1 
 	
-	def update(self):
+	def update(self,optimizer):
 		'''
 		Update model weights/biases 
 		Inputs 
-		None 
+		optimizer ::: NN_numerics.Optimizer ::: Optimization algorithm 
 		Outputs 
 		None
 		'''
-		#to be reworked 
-		beta1 = self.beta1
-		beta2 = self.beta2
-		ite = self.ite
-		epsilon = self.epsilon 
-		learning_rate = self.learning_rate
-		algo = self.algorithm
+		#
+		ite = optimizer.ite
+		beta1 = optimizer.beta1
+		beta2 = optimizer.beta2
+		epsilon = optimizer.epsilon
+		learning_rate = optimizer.learning_rate
+		algo = optimizer.algorithm
 		## Forward layers loop 
 		l = 0
 		while l < len(self.layers):
 			## Update the layer 
-			self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,algorithm = algo)
+			#self.layers[l].update(learning_rate,beta1,beta2,epsilon,ite,algorithm = algo)
+			self.layers[l].update2(optimizer)
 			l = l + 1
 		
 	def calc_loss(self,y,yhat): 
@@ -129,21 +189,17 @@ class Model():
 		loss = np.sum(err)/batch_size # Normalize loss according to the number of examples 
 		return loss
 		
-	def fit(self,x,yhat,epochs=1000):
+	def fit(self,x,yhat,optimizer = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8),epochs=1000):
 		'''
 		Inputs 
 		x ::: numpy.array (Input_Dim,Batch_Size) ::: Input Values 
-		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values 
+		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values
+		optimizer ::: NN_numerics.Adam(Optimizer) ::: default 
+		= Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8) ::: 
 		Epochs ::: int ::: default = 1000 ::: Number of epochs 
 		Outputs 
 		loss ::: float ::: Mean Squared Error between Y and Yhat 
 		'''
-		self.ite = 1
-		self.beta1 = 0.9
-		self.beta2 = 0.999
-		self.epsilon = 10e-8
-		self.learning_rate = 0.01
-		self.algorithm = 'Adam'
 		## Training Loop 
 		i = 0 
 		err = []
@@ -151,8 +207,8 @@ class Model():
 			y = self.predict(x)
 			loss = self.calc_loss(y,yhat)
 			self.backprop(y,yhat)
-			self.update()
-			self.ite = self.ite + 1 
+			self.update(optimizer)
+			optimizer.ite = optimizer.ite + 1 
 			#
 			err = err + [loss]
 			del y, loss
@@ -281,6 +337,15 @@ class Dense(Layer):
 		del zl_tmp,alm1_tmp,wl_tmp,dzl_tmp,dwl_tmp,dbl_tmp
 		return dal_tmp
 
+	def update2(self,optimizer): 
+		'''
+		Inputs 
+		optimizer ::: NN_numerics.Optimizer :::
+		Outputs 
+		None
+		'''
+		optimizer.update_layer(self)
+
 	def update(self,learning_rate,beta1,beta2,epsilon,ite,algorithm = 'SGD'):
 		'''
 		learning_rate ::: float :::
@@ -312,22 +377,6 @@ class Dense(Layer):
 			self.weights =  self.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
 			self.bias = self.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
 			 
-class Optimizer():
-	
-	def __init__(self,type = None):
-		self.type = None
-
-class Adam(Optimizer):
-	
-	def __init__(self,learning_rate,beta1, beta2, epsilon):
-		self.beta1 = beta1
-		self.beta2 = beta2
-		self.epsilon = epsilon
-		self.learning_rate = learning_rate
-
-class SGD(Optimizer):
-	def __init__(self,learning_rate):
-		self.learning_rate = learning_rate
 				
 if __name__ == "__main__":
 	# Data 
