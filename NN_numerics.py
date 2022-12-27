@@ -182,7 +182,7 @@ class Model():
 		loss = np.sum(err)/batch_size # Normalize loss according to the number of examples 
 		return loss
 		
-	def fit(self,x,yhat,optimizer = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8),epochs=1000):
+	def fit(self,x,yhat,optimizer = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8),epochs=1000,batch_size = None):
 		'''
 		Inputs 
 		x ::: numpy.array (Input_Dim,Batch_Size) ::: Input Values 
