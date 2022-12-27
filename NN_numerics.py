@@ -185,26 +185,55 @@ class Model():
 	def fit(self,x,yhat,optimizer = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8),epochs=1000,batch_size = None):
 		'''
 		Inputs 
-		x ::: numpy.array (Input_Dim,Batch_Size) ::: Input Values 
-		yhat ::: numpy.array (Output_Dim,Batch_Size) ::: Targeted Values
+		x ::: numpy.array (Input_Dim,N_examples) ::: Input Values 
+		yhat ::: numpy.array (Output_Dim,N_examples) ::: Targeted Values
 		optimizer ::: NN_numerics.Adam(Optimizer) ::: default 
 		= Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8) ::: 
 		Epochs ::: int ::: default = 1000 ::: Number of epochs 
+		batch_size ::: int ::: default = None ::: Mini-batch size 
 		Outputs 
 		loss ::: float ::: Mean Squared Error between Y and Yhat 
 		'''
+		n_examples = np.size(x,-1)
+		if batch_size == None :
+			batch_size = n_examples
+		if batch_size > n_examples:
+			batch_size = n_examples
 		## Training Loop 
 		i = 0 
 		err = []
 		while (i < epochs) :
-			y = self.predict(x)
-			loss = self.calc_loss(y,yhat)
-			self.backprop(y,yhat)
-			self.update(optimizer)
-			optimizer.ite = optimizer.ite + 1 
-			#
-			err = err + [loss]
-			del y, loss
+			print( 'Epoch ',str(i),' /',str(epochs))
+			## Shuffle training examples 
+			shuffled_indices = np.random.permutation(n_examples)
+			x = x[:,shuffled_indices]
+			yhat = yhat[:,shuffled_indices]
+			## Mini-batches Loop
+			j = 0 
+			while j < n_examples:
+				## Get mini-batch from shuffled training data 
+				if j+batch_size < n_examples:
+					x_mb = x[:,j:j+batch_size]
+					yhat_mb = yhat[:,j:j+batch_size] 
+				else : 
+					x_mb = x[:,j:]
+					yhat_mb = yhat[:,j:]
+				## Forward prop
+				y = self.predict(x_mb)
+				## Calc Loss
+				loss = self.calc_loss(y,yhat_mb)
+				## Back prop
+				self.backprop(y,yhat_mb)
+				## Update parameters 
+				self.update(optimizer)
+				optimizer.ite = optimizer.ite + 1 
+				## Update error curve with loss 
+				err = err + [loss]
+				del y
+				print(j,'/',np.size(x,-1),'::: Mini batch Loss = ',str(loss))
+				j = j + batch_size
+			print( 'Last loss at Epoch ',str(i),' = ',str(loss))
+			del loss
 			i = i + 1 
 		return err
 		
@@ -332,23 +361,18 @@ class Dense(Layer):
 				
 if __name__ == "__main__":
 	# Data 
-	X = np.ones((4,4))
-	Yhat = np.ones((2,4))*2#np.array([[2],[2]])
+	X = np.ones((4,10))
+	Yhat = np.ones((2,10))*2#np.array([[2],[2]])
 	#########
 	#layer1 = Dense(4,activation ='linear',input_units = 4)
 	layer1 = Dense(3,activation ='sigmoid',input_units = 4)
 	layer2 = Dense(2,activation ='sigmoid',input_units = 3)
 	layer3 = Dense(2,activation ='linear',input_units = 2)
 	model2 = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
-	err2 = model2.fit(X,Yhat)
+	err2 = model2.fit(X,Yhat,epochs= 200,batch_size=4)
 	#err2 = model2.fit(X,Yhat,optimizer = SGD(learning_rate = 0.01))
 	plt.plot(err2)
 	plt.show()
 	
 	print(model2.predict(X))
 	print(Yhat)	
-	
-	
-
-
-			
