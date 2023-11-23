@@ -66,7 +66,6 @@ class GaussianMixture :
 	def predict(self,input_data) : 
 		probabilities = self.predict_proba(input_data)
 		classes = np.argmax(probabilities,axis = 1)
-		print(classes)
 		return classes
 		
 	def predict_split(self,input_data):
@@ -83,7 +82,6 @@ class GaussianMixture :
 		prev_sigma = [np.zeros((data_dim,data_dim)) for i in range(self.n_classes)]
 		n = 0
 		while not stop_criterion and (n < max_iter) : 
-			print(n)
 			split_list = self.predict_split(input_data)
 			self.update(split_list,data_size)
 			
@@ -99,11 +97,29 @@ class GaussianMixture :
 	
 
 if __name__ == '__main__':
-	data_vec = np.array([[2,4],[8,3],[1.5,1.5],[1.5,2.5],[1.4,3],[7.5,3.2],[8,4],[7.2,3.4]])
+	# Set the mean and covariance
+	mean1 = [0, 0]
+	mean2 = [2, 0]
+	mean3 = [8,10]
+	cov1 = [[1, .7], [.7, 1]]
+	cov2 = [[.5, .4], [.4, .5]]
+	cov3 = [[2, .4], [.4, .2]]
 	
-	gm = GaussianMixture(2)
+	# Generate data from the mean and covariance
+	data1 = np.random.multivariate_normal(mean1, cov1, size=1000)
+	data2 = np.random.multivariate_normal(mean2, cov2, size=1000)
+	data3 = np.random.multivariate_normal(mean3, cov3, size=1000)
+	data_vec = np.concatenate((data1,data2,data3),axis = 0)
+	ind_list = np.arange(np.size(data_vec,0))
+	np.random.shuffle(ind_list)
+	print(ind_list)
+	data_vec = data_vec[ind_list,:]
+	#data_vec = np.array([[2,4],[8,3],[1.5,1.5],[1.5,2.5],[1.4,3],[7.5,3.2],[8,4],[7.2,3.4]])
 	
-	gm.fit(data_vec)
+	gm = GaussianMixture(3)
+	gm.initialise_attributes(data_vec)
+	
+	
 	
 	x = np.linspace(0,10,100)
 	xv, yv = np.meshgrid(x,x)
@@ -113,10 +129,25 @@ if __name__ == '__main__':
 	for i in range(100): 
 		for j in range(100):
 			proba[i,j] = general_gaussian_probability(np.array([xv[i,j],yv[i,j]]), gm.mu_list[0], gm.sigma_list[0] )
-	
 	plt.pcolormesh(xv,yv,proba)
 	plt.scatter(data_vec[:,0],data_vec[:,1],c=gm.predict(data_vec))
 	plt.show()
+	
+	gm.fit(data_vec,max_iter = 20)
+	
+	x = np.linspace(0,10,100)
+	xv, yv = np.meshgrid(x,x)
+	print(xv.shape,yv.shape)
+	proba = np.zeros((100,100))
+	print(proba.shape)
+	for i in range(100): 
+		for j in range(100):
+			proba[i,j] = general_gaussian_probability(np.array([xv[i,j],yv[i,j]]), gm.mu_list[0], gm.sigma_list[0] )
+	plt.pcolormesh(xv,yv,proba)
+	plt.scatter(data_vec[:,0],data_vec[:,1],c=gm.predict(data_vec))
+	plt.show()
+	
+	
 
 
 	
