@@ -82,13 +82,14 @@ class GaussianMixture :
 		prev_sigma = [np.zeros((data_dim,data_dim)) for i in range(self.n_classes)]
 		n = 0
 		while not stop_criterion and (n < max_iter) : 
+			print(n)
 			split_list = self.predict_split(input_data)
 			self.update(split_list,data_size)
 			
+			stop_criterion = np.all(np.asarray(prev_mu) == np.asarray(self.mu_list)) and np.all(np.asarray(prev_sigma) == np.asarray(self.sigma_list))
+			print(stop_criterion)
 			prev_mu = self.mu_list
 			prev_sigma = self.sigma_list
-			
-			stop_criterion = False
 			
 			n = n + 1
 			
@@ -133,7 +134,7 @@ if __name__ == '__main__':
 	plt.scatter(data_vec[:,0],data_vec[:,1],c=gm.predict(data_vec))
 	plt.show()
 	
-	gm.fit(data_vec,max_iter = 20)
+	gm.fit(data_vec,max_iter = 100)
 	
 	x = np.linspace(0,10,100)
 	xv, yv = np.meshgrid(x,x)
