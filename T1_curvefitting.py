@@ -1,3 +1,5 @@
+import sys 
+sys.path.append('../sources/')
 from NN_numerics import * 
 
 # Data 
