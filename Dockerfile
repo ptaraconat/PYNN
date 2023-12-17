@@ -7,4 +7,4 @@ COPY ./sources ./
 COPY ./tests ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python -m pytest -k tests/*"]
+CMD ["python -m pytest -k tests"]
