@@ -4,7 +4,8 @@ WORKDIR /code
 
 COPY ./requirements.txt ./
 COPY ./sources ./
+COPY ./tests ./
 COPY ./T1_curvefitting.py ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "T1_curvefitting.py"]
+CMD ["python -m pytest -k tests/*"]

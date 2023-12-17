@@ -1,5 +1,5 @@
 import sys 
-sys.path.append('../sources/')
+sys.path.append('sources/')
 from NN_numerics import * 
 import pytest
 
