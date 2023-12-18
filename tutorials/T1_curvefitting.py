@@ -1,6 +1,8 @@
 import sys 
-sys.path.append('../sources/')
-from NN_numerics import * 
+sys.path.append('../')
+from PYNN.sources.neural_net import Dense, Model, Adam, SGD
+import numpy as np 
+import matplotlib.pyplot as plt 
 
 # Data 
 Ndata = 100

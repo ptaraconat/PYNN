@@ -1,6 +1,5 @@
-import sys 
-sys.path.append('sources/')
-from NN_numerics import * 
+from PYNN.sources.neural_net import Dense, Model
+import numpy as np 
 import pytest
 
 @pytest.fixture
@@ -23,7 +22,6 @@ def layer2():
     layer.bias = B 
     layer.weights = W
     return layer 
-
 
 def test_layer_forward(layer1):
     input = np.array([[1],[1],[1]])
