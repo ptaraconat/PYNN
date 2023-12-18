@@ -30,6 +30,16 @@ def test_layer_forward(layer1):
     layer1.forward(input)
     bool_tmp = np.all(layer1.cache['A'] == np.array([[10],[12]]))
     assert bool_tmp
+
+def test_layer_backward(layer2):
+    rhs_feed = np.array([[1],[1],[1]])
+    input = np.array([[1],[1]])
+    layer2.forward(input)
+    result = layer2.backward(rhs_feed, 1)
+    assertion = (np.all(result == np.array([[6],[12]])) and 
+                np.all(layer2.dweights_ == np.array([[1,1],[1,1],[1,1]])) and 
+                np.all(layer2.dbias_ == np.array([[1], [1], [1]])) )
+    assert assertion
     
 def test_model_forward(layer1,layer2):
     model = Model([layer1,layer2],loss = 'MSE')
