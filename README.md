@@ -2,6 +2,9 @@
 
 Personnal neural network module
 
+# 
+
+sudo apt remove docker docker-engine docker.io containerd runc
 # Add Docker's official GPG key:
 sudo apt-get update
 sudo apt-get install ca-certificates curl gnupg
@@ -18,3 +21,6 @@ sudo apt-get update
 
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
+###### MPI 
+sudo apt-get install mpich
+pip install mpi4py
