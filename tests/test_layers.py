@@ -1,4 +1,6 @@
-from PYNN.sources.neural_net import Dense, Model
+import sys as sys 
+sys.path.append('sources/')
+from neural_net import Dense, Model
 import numpy as np 
 import pytest
 
