@@ -180,6 +180,23 @@ class Model():
 		err = self.loss(y,yhat) # Assess loss 
 		loss = np.sum(err)/batch_size # Normalize loss according to the number of examples 
 		return loss
+	
+	def step(self,x_mb,y_mb): 
+		'''
+		Performs forward propagation and back ward propagation 
+		arguments 
+		x_mb ::: array (n_features,batch_size) ::: input data 
+		y_mb ::: array (n_labels, batch_size) ::: output data 
+		returns 
+		loss ::: float ::: loss value 
+		'''
+		## Forward prop
+		yhat = self.predict(x_mb)
+		## Calc Loss
+		loss = self.calc_loss(yhat,y_mb)
+		## Back prop
+		self.backprop(yhat,y_mb)
+		return loss
 		
 	def fit(self,x,yhat,optimizer = Adam(learning_rate = 0.01, beta1 = 0.9, beta2 = 0.999, epsilon = 10e-8),epochs=1000,batch_size = None):
 		'''
@@ -217,18 +234,13 @@ class Model():
 				else : 
 					x_mb = x[:,j:]
 					yhat_mb = yhat[:,j:]
-				## Forward prop
-				y = self.predict(x_mb)
-				## Calc Loss
-				loss = self.calc_loss(y,yhat_mb)
-				## Back prop
-				self.backprop(y,yhat_mb)
+				## Forward and Backward prop 
+				loss = self.step(x_mb,yhat_mb)
 				## Update parameters 
 				self.update(optimizer)
 				optimizer.ite = optimizer.ite + 1 
 				## Update error curve with loss 
 				err = err + [loss]
-				del y
 				#print(j,'/',np.size(x,-1),'::: Mini batch Loss = ',str(loss))
 				j = j + batch_size
 			print( 'Last loss at Epoch ',str(i),' = ',str(loss))
