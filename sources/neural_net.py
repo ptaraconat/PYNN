@@ -88,7 +88,6 @@ class Adam(Optimizer):
 		layer.weights =  layer.weights - learning_rate * np.divide(Vdwc_tmp,(np.sqrt(Sdwc_tmp)+epsilon))
 		layer.bias = layer.bias - learning_rate*np.divide(Vdbc_tmp,(np.sqrt(Sdbc_tmp)+epsilon))
 
-
 class SGD(Optimizer):
 	def __init__(self,learning_rate):
 		self.ite = 1 
@@ -230,7 +229,7 @@ class Model():
 				## Update error curve with loss 
 				err = err + [loss]
 				del y
-				print(j,'/',np.size(x,-1),'::: Mini batch Loss = ',str(loss))
+				#print(j,'/',np.size(x,-1),'::: Mini batch Loss = ',str(loss))
 				j = j + batch_size
 			print( 'Last loss at Epoch ',str(i),' = ',str(loss))
 			del loss
