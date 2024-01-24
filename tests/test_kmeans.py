@@ -34,5 +34,15 @@ def test_prediction(kmeans_model2):
     expected_val = np.array([0,2,1,1]).astype(int)
     assertion = np.all(closest_centroids == expected_val)
     assert assertion 
+
+def test_get_clusters(kmeans_model2):
+    input = np.array([[1,1],[2,2],[3,3],[3.1,3.1]])
+    clusters = kmeans_model2._get_clusters(input)
+    assertion = True 
+    assertion = assertion and np.all(clusters[0] == np.array([[1,1]]))
+    assertion = assertion and np.all(clusters[1] == np.array([[3,3],[3.1,3.1]]))
+    assertion = assertion and np.all(clusters[2] == np.array([[2,2]]))
+    assert assertion 
+    
     
     

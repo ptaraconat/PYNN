@@ -73,7 +73,53 @@ class KMeans :
         '''
         # init centroids 
         self._init_centroids(X)
+        # training loop 
+        for _ in range(self.max_iters):
+            # split X in clusters
+            clusters = self._get_clusters(X)
+            # store former centroids 
+            centroid_olds = self.centroids
+            # update centroids 
+            self.centroids = self._get_centroids(clusters)
+            # check convergence 
+            if self._is_converged(centroid_olds,self.centroids) : 
+                break
     
+    def _get_centroids(self,clusters):
+        '''
+        arguments 
+        clusters ::: list (n_classes) of arrays (cluster_size, n_features) :::
+        returns 
+        centroids ::: array (n_classes, n_features)
+        '''
+        centroids = np.zeros((self.n_classes,self.n_features))
+        for cluster_indx, cluster in enumerate(clusters) :
+            mean_tmp = np.mean(self.x[cluster],axis = 0)
+            centroids[cluster_indx,:] = mean_tmp 
+        return centroids
+
+    def _is_converged(self,centroids_old, centroids) : 
+        '''
+        '''
+        distances = [ euclidian_distance(centroids_old[i],centroids[i]) for i in range(self.n_classes)]
+        return sum(distances) == 0
+            
+    def _get_clusters(self,X):
+        '''
+        arguments 
+        X ::: array(n_samples, n_features) of float ::: input_data 
+        returns 
+        clusters ::: list (n_classes) of arrays (cluster_size,n_features) ::: 
+        '''
+        labels = self.predict2(X)
+        clusters = []
+        # classes/clusters loop 
+        for i in range(self.n_classes):
+            idx_tmp = np.argwhere(labels == i)[:,0]
+            print(idx_tmp.shape)
+            clusters.append(X[idx_tmp,:])
+        return clusters 
+            
     def predict(self,x):
         '''
         '''
@@ -123,23 +169,6 @@ class KMeans :
             clusters[centroid_idx].append(idx)
         return clusters
 
-    
-
-    def _get_centroids(self,clusters):
-        '''
-        '''
-        centroids = np.zeros((self.n_classes,self.n_features))
-        for cluster_indx, cluster in enumerate(clusters) :
-            mean_tmp = np.mean(self.x[cluster],axis = 0)
-            centroids[cluster_indx,:] = mean_tmp 
-        return centroids
-
-    def _is_converged(self,centroids_old, centroids) : 
-        '''
-        '''
-        distances = [ euclidian_distance(centroids_old[i],centroids[i]) for i in range(self.n_classes)]
-        return sum(distances) == 0
-
     def plot(self):
         '''
         ''' 
@@ -159,7 +188,7 @@ if __name__ == '__main__':
     X, y = X, y = make_blobs(n_samples=500, centers=4, n_features=2,random_state=42)
     print(X.shape)
     model = KMeans(n_class = 4)
-    y_pred = model.predict(X)
+    model.predict(X)
 
 
         
