@@ -19,6 +19,60 @@ class KMeans :
         self.clusters = [ [] for _ in range(self.n_classes)]
         # mean of features for each cluster 
         self.centroids = []
+
+    def _init_centroids(self, X):
+        '''
+        arguments 
+        X ::: array(n_samples, n_features) ::: input_data 
+        updates 
+        self.centroids ::: 
+        '''
+        n_samples = np.size(X,0)
+        random_indices = np.random.choice(n_samples,
+                                          self.n_classes,
+                                          replace = False,
+                                          ) 
+        self.centroids = [X[index] for index in random_indices]
+        
+    def predict2(self,X):
+        '''
+        arguments 
+        X ::: array(n_samples, n_features) ::: input_data 
+        returns : 
+        labels ::: arrays(n_samples) ::: predicted classification 
+        
+        '''
+        if self.centroids == []:
+            raise Exception("Error : centroids are not initialized")
+        else : 
+            closest_centroids = self._find_closest_centroids(X)
+        return np.squeeze(closest_centroids)
+            
+            
+    def _find_closest_centroids(self,X):
+        '''
+        arguments 
+        X ::: array(n_samples, n_features) of float ::: input_data 
+        returns : 
+        closest_centroids ::: array (n_samples,1) int ::: indexes of the closest centroids
+        '''
+        n_samples = np.size(X,0)
+        closest_centroids = np.zeros((n_samples,1)).astype(int)
+        for i in range(n_samples):
+            sample = X[i,:]
+            distances = [euclidian_distance(sample,point) for point in self.centroids]
+            closest_centroids[i,0]= np.argmin(distances)
+        return closest_centroids
+    
+    def fit(self,X):
+        '''
+        arguments 
+        X ::: array(n_samples, n_features) of float ::: input_data 
+        updates 
+        self.centroids ::: list (n_classe) of arrays (n_features)
+        '''
+        # init centroids 
+        self._init_centroids(X)
     
     def predict(self,x):
         '''
@@ -43,7 +97,13 @@ class KMeans :
                 break
         
         return self._get_cluster_labels(self.clusters)
-
+    
+    def _closest_centroid(self,sample, centroids):
+        '''
+        '''
+        distances = [euclidian_distance(sample,point) for point in centroids]
+        return np.argmin(distances)
+    
     def _get_cluster_labels(self,clusters):
         '''
         '''
@@ -63,11 +123,7 @@ class KMeans :
             clusters[centroid_idx].append(idx)
         return clusters
 
-    def _closest_centroid(self,sample, centroids):
-        '''
-        '''
-        distances = [euclidian_distance(sample,point) for point in centroids]
-        return np.argmin(distances)
+    
 
     def _get_centroids(self,clusters):
         '''
