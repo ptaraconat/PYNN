@@ -44,5 +44,16 @@ def test_get_clusters(kmeans_model2):
     assertion = assertion and np.all(clusters[2] == np.array([[2,2]]))
     assert assertion 
     
+def test_set_centroids(kmeans_model2):
+    clusters = [np.array([[1,1]]), 
+                np.array([[3,3],[3.1,3.1]]), 
+                np.array([[2,2]])]
+    kmeans_model2._set_centroids(clusters)
+    centroids = kmeans_model2.centroids
+    assertion = True 
+    assertion = assertion and np.all(centroids[0] == np.array([1.,1.]))
+    assertion = assertion and np.all(centroids[1] == np.array([3.05,3.05]))
+    assertion = assertion and np.all(centroids[2] == np.array([2.,2.]))
+    assert assertion
     
     
