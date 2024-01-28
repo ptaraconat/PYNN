@@ -32,10 +32,22 @@ class TreeNode :
             X_right = X[idx_right,:]
         return X_left, X_right
     
+    def _is_leaf(self):
+        '''
+        arguments 
+        None 
+        returns 
+        bool ::: bool
+        '''
+        if self.value != None :
+            return True 
+        else :
+            return False 
+    
     def _data_flow(self,X):
         '''
         arguments 
-        X ::: array(n_samples, n_features) ::: 
+        X ::: array(1, n_features) ::: 
         returns 
         value
         '''
@@ -43,12 +55,11 @@ class TreeNode :
             return self.value 
         else : 
             X_left, X_right = self._split(X)
-            if X_left != None : 
-                self.right_node._data_flow(X_left)
-            if X_right != None : 
-                self.left_node._data_flow(X_right)
+            if X_left is not None : 
+                return self.left_node._data_flow(X_left)
+            if X_right is not None : 
+                return self.right_node._data_flow(X_right)
         
-
 class TreeClassifier : 
     def __init__(self, min_sample_split = 2,max_depth = 100, 
                  n_features = None):
@@ -68,5 +79,12 @@ class TreeClassifier :
         arguments 
         X ::: array (n_samples, n_features) ::: 
         '''
-        pass 
+        n_samples, n_features = X.shape
+        result = []
+        for i in range(n_samples): 
+            x_sample = np.expand_dims(X[i,:],axis = 0)
+            print(x_sample)
+            val_tmp = self.root._data_flow(x_sample)
+            result.append(val_tmp)
+        return np.asarray(result)
         
