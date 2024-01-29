@@ -1,5 +1,5 @@
 import sys as sys 
-sys.path.append('../sources/')
+sys.path.append('sources/')
 from tree_models import * 
 import pytest
 
