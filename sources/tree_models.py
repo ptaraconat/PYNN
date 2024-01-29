@@ -41,8 +41,6 @@ class TreeNode :
             y_right = y[idx_right]
         return y_left, y_right
         
-        
-    
     def _split(self, X): 
         '''
         arguments 
@@ -154,12 +152,26 @@ class TreeNode :
                     split_threshold = threshold 
         return split_index, split_threshold 
     
-    def _stop_growing(self, y, max_depth, min_samples_required) : 
+    def _stop_growing(self, y, max_depth, min_samples_required) :
+        '''
+        arguments : 
+        y ::: array (n_samples) ::: labels array 
+        max_depth ::: int ::: maximum depth of the tree 
+        min_samples_required ::: int ::: minimum sample per leaf 
+        returns 
+        stop_criterion ::: bool ::: 
+        ''' 
         n_labels = len(np.unique(y))
         n_samples = len(y) 
         return (self.depth >= max_depth or n_labels == 1 or n_samples < min_samples_required)
     
     def _get_leaf_value(self,y):
+        '''
+        arguments : 
+        y ::: array (n_samples) :: labels array 
+        returns 
+        most_comon ::: int ::: most common label in y 
+        '''
         counter = Counter(y)
         most_common = counter.most_common(1)[0][0]
         return most_common
@@ -168,21 +180,37 @@ class TreeNode :
                       max_depth = 100, 
                       min_samples_required = 2,
                       randomized_features = None) : 
-        
+        '''
+        arguments :
+        X ::: array (n_samples, n_features) ::: input data 
+        y ::: (n_samples) ::: labels array 
+        max_depth ::: int ::: maximum depth of the tree 
+        min_samples_required ::: int ::: minimum sample per leaf 
+        randomized_features ::: int ::: 
+        updates :
+        self.value 
+        self.spliting_features 
+        self.spliting_threshold 
+        self.left_node
+        self.right_node
+        '''
         if self._stop_growing(y, max_depth, min_samples_required) : 
+            # set leaf value
             self.value = self._get_leaf_value(y)
         else : 
+            # get best splitting parameters 
             split_index, split_threshold = self._get_best_criterion(X, y, 
                                                                     randomized_features= randomized_features)
+            # update the splitting parameters 
             self.spliting_feature = split_index
             self.spliting_threshold = split_threshold
             # split data 
             X_left, X_right = self._split(X)
             y_left, y_right = self._split_labels(y,X) 
-            # 
+            # set left/right nodes 
             self.left_node = TreeNode(depth = self.depth + 1)
             self.right_node = TreeNode(depth = self.depth +1)
-            #
+            # grow left and right nodes 
             self.left_node._set_and_grow(X_left,y_left,
                                          max_depth= max_depth,
                                          min_samples_required= min_samples_required,
@@ -191,11 +219,10 @@ class TreeNode :
                                           max_depth = max_depth,
                                           min_samples_required = min_samples_required,
                                           randomized_features = randomized_features)
-            
-          
+                     
 class TreeClassifier : 
     def __init__(self, min_sample_split = 2,max_depth = 100, 
-                 n_features = None):
+                 n_features = None, randomized_features = None):
         '''
         arguments 
         min_samples_split ::: int :::
@@ -205,6 +232,7 @@ class TreeClassifier :
         self.min_sample_split = min_sample_split
         self.max_depth = max_depth
         self.n_features = n_features
+        self.randomized_features = randomized_features
         self.root = None 
         
     def fit(self,X,y):
@@ -213,7 +241,11 @@ class TreeClassifier :
         X ::: array (n_samples, n_features) ::: 
         y ::: array (nsamples) ::: 
         '''
-        pass 
+        root_node = TreeNode(depth = 0)
+        self.root = root_node
+        self.root._set_and_grow(X,y,max_depth= self.max_depth,
+                                min_samples_required= self.min_sample_split,
+                                randomized_features = self.randomized_features)
         
     def predict(self,X):
         '''

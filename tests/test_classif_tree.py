@@ -164,13 +164,27 @@ def test_node_grow(node_fixture):
                                max_depth = 3,
                                min_samples_required = 2,
                                randomized_features = 3)
-    print(node_fixture.left_node)
+    
     val_left = node_fixture.left_node.value
     val_right = node_fixture.right_node.value
-    
     assertion = val_left == 0 and val_right == 1
+    assert assertion
     
-    print(val_left, val_right)
-    
+def test_tree_fit():
+    data = np.array([[1.1, 1, 4],
+                     [1.2, 2, 3],
+                     [2.3, 3, 4],
+                     [2.9, 1.1, 5],
+                     [3.5, 0.1, 3],
+                     [2.1, 3.2, 1],
+                     [6, 3, 2],
+                     [4.4, 4, 5]])
+    y = np.array([0,0,1,0,0,1,1,1])
+    tree = TreeClassifier(min_sample_split = 2,max_depth = 3, 
+                          n_features = None, randomized_features = 3)
+    tree.fit(data,y)
+    val_left = tree.root.left_node.value
+    val_right = tree.root.right_node.value
+    assertion = val_left == 0 and val_right == 1
     assert assertion
     
