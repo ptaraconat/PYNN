@@ -92,3 +92,85 @@ def test_node_flow2(tree_fixture):
     expected_outcome = np.array([5,5,11])
     assertion = np.all(predictions == expected_outcome)
     assert assertion
+    
+def test_entropy():
+    data = np.array([1,1,1,1,1,0,0,0,0,0])
+    ent = entropy(data)
+    assertion = ent == 1
+    assert assertion 
+    
+def test_child_entropy(node_fixture):
+    data = np.array([[1.1, 1, 4],
+                     [1.2, 2, 3],
+                     [2.3, 3, 4],
+                     [2.9, 1.1, 5],
+                     [3.5, 0.1, 3],
+                     [2.1, 3.2, 1],
+                     [6, 3, 2],
+                     [4.4, 4, 5],
+                     [4.4, 4, 5]])
+    y = np.array([0,0,1,0,0,1,1,1,1])
+    child_entropy = node_fixture._get_child_entropy(y,data[:,1],2)
+    print(child_entropy)
+    assertion = child_entropy == 0
+    assert assertion 
+    
+def test_information_gain(node_fixture):
+    data = np.array([[1.1, 1, 4],
+                     [1.2, 2, 3],
+                     [2.3, 3, 4],
+                     [2.9, 1.1, 5],
+                     [3.5, 0.1, 3],
+                     [2.1, 3.2, 1],
+                     [6, 3, 2],
+                     [4.4, 4, 5]])
+    y = np.array([0,0,1,0,0,1,1,1])
+    ig = node_fixture._get_information_gain(y,data[:,1],2)
+    assertion = ig == 1
+    assert assertion
+    
+def test_best_crit(node_fixture): 
+    data = np.array([[1.1, 1, 4],
+                     [1.2, 2, 3],
+                     [2.3, 3, 4],
+                     [2.9, 1.1, 5],
+                     [3.5, 0.1, 3],
+                     [2.1, 3.2, 1],
+                     [6, 3, 2],
+                     [4.4, 4, 5]])
+    y = np.array([0,0,1,0,0,1,1,1])
+    split_index, split_threshold = node_fixture._get_best_criterion(data,y, randomized_features = 3)
+    assertion = split_index == 1 and split_threshold == 2.0 
+    assert assertion 
+
+def test_get_value(node_fixture): 
+    y = np.array([0,0,0,1,0,0,1,1,1,1,1])
+    leaf_label = node_fixture._get_leaf_value(y)
+    print(leaf_label)
+    assertion = leaf_label == 1 
+    assert assertion 
+
+def test_node_grow(node_fixture):
+    data = np.array([[1.1, 1, 4],
+                     [1.2, 2, 3],
+                     [2.3, 3, 4],
+                     [2.9, 1.1, 5],
+                     [3.5, 0.1, 3],
+                     [2.1, 3.2, 1],
+                     [6, 3, 2],
+                     [4.4, 4, 5]])
+    y = np.array([0,0,1,0,0,1,1,1])
+    node_fixture._set_and_grow(data,y,
+                               max_depth = 3,
+                               min_samples_required = 2,
+                               randomized_features = 3)
+    print(node_fixture.left_node)
+    val_left = node_fixture.left_node.value
+    val_right = node_fixture.right_node.value
+    
+    assertion = val_left == 0 and val_right == 1
+    
+    print(val_left, val_right)
+    
+    assert assertion
+    
