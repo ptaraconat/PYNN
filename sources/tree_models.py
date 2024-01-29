@@ -259,4 +259,5 @@ class TreeClassifier :
             val_tmp = self.root._data_flow(x_sample)
             result.append(val_tmp)
         return np.asarray(result)
-        
+
+      
