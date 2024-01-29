@@ -369,21 +369,3 @@ class Dense(Layer):
 		dal_tmp = np.dot(np.transpose(wl_tmp) , dzl_tmp)
 		del zl_tmp,alm1_tmp,wl_tmp,dzl_tmp,dwl_tmp,dbl_tmp
 		return dal_tmp	 
-				
-if __name__ == "__main__":
-	# Data 
-	X = np.ones((4,10))
-	Yhat = np.ones((2,10))*2#np.array([[2],[2]])
-	#########
-	#layer1 = Dense(4,activation ='linear',input_units = 4)
-	layer1 = Dense(3,activation ='sigmoid',input_units = 4)
-	layer2 = Dense(2,activation ='sigmoid',input_units = 3)
-	layer3 = Dense(2,activation ='linear',input_units = 2)
-	model2 = Model(layers = [layer1,layer2,layer3],loss = 'MSE')
-	err2 = model2.fit(X,Yhat,epochs= 200,batch_size=4)
-	#err2 = model2.fit(X,Yhat,optimizer = SGD(learning_rate = 0.01))
-	plt.plot(err2)
-	plt.show()
-	
-	print(model2.predict(X))
-	print(Yhat)	
