@@ -140,7 +140,6 @@ class TreeNode :
                 indices = np.random.choice(np.size(X,1),randomized_features, replace = False)
             else : 
                 raise Exception("randomized_features is higher than the number of input features")
-        print(indices)
         for ind in indices : 
             x_col = X[:,ind]
             thresholds = np.unique(x_col)
@@ -260,4 +259,4 @@ class TreeClassifier :
             result.append(val_tmp)
         return np.asarray(result)
 
-      
+  
