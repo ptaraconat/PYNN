@@ -1,7 +1,7 @@
 import numpy as np 
-from tree_models import TreeClassifier
+from sources.tree_models import TreeClassifier
 from collections import Counter
-
+# Resources : P. Loeber
 def bootstrap_sample(X,y):
 	n_samples = X.shape[0]
 	idxs = np.random.choice(n_samples,size = n_samples, replace = True)
@@ -55,30 +55,3 @@ class RandomForest:
             most_common = counter.most_common(1)[0][0]
             labels.append(most_common)
         return np.asarray(labels)
-    
-# Testing
-if __name__ == "__main__":
-    # Imports
-    from sklearn import datasets
-    from sklearn.model_selection import train_test_split
-
-    def accuracy(y_true, y_pred):
-        accuracy = np.sum(y_true == y_pred) / len(y_true)
-        return accuracy
-
-    data = datasets.load_breast_cancer()
-    X = data.data
-    y = data.target
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=1234
-    )
-
-    clf = RandomForest(n_trees=20, max_depth=10,n_feats = 10)
-
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    print(np.shape(X_train))
-    acc = accuracy(y_test, y_pred)
-
-    print("Accuracy:", acc)
