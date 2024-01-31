@@ -87,23 +87,23 @@ class TreeNode :
             if X_right is not None : 
                 return self.right_node._data_flow(X_right)
     
-    def _get_child_entropy(self,y,x_col,threshold):
+    def _get_child_score(self,y,x_col,threshold):
         '''
         arguments :
         y ::: array(n_samples) ::: labels table 
         x_col ::: array(n_samples) ::: feature column
         threshold ::: float ::: threshold used to split data given x_col
         returns 
-        child_entropy ::: float ::: weighted entropy of child when the node split 
+        child_score ::: float ::: weighted score of child when the node split 
         is achieved on feature x_col with the given threshold. 
         '''
         idx_left, idx_right = self._get_split_indexes(x_col,threshold)
         # weighted average child Entropy 
         n_l, n_r = len(idx_left), len(idx_right)
         n = len(y)
-        e_l, e_r = entropy(y[idx_left]), entropy(y[idx_right])
-        child_entropy = (n_l/n)*e_l + (n_r/n)*e_r
-        return child_entropy
+        e_l, e_r = self.method(y[idx_left]), self.method(y[idx_right])
+        child_score = (n_l/n)*e_l + (n_r/n)*e_r
+        return child_score
     
     def _get_information_gain(self, y, x_col, threshold):
         '''
@@ -115,10 +115,10 @@ class TreeNode :
         information_gain ::: float ::: 
         '''
         # parent entropy
-        parent_entropy = entropy(y)
-        child_entropy = self._get_child_entropy(y, x_col, threshold)
+        parent_score = self.method(y)
+        child_score = self._get_child_score(y, x_col, threshold)
         # information gain 
-        ig = parent_entropy - child_entropy
+        ig = parent_score - child_score
         return ig  
     
     def _get_best_criterion(self,X,y, randomized_features = None):
@@ -164,17 +164,6 @@ class TreeNode :
         n_samples = len(y) 
         return (self.depth >= max_depth or n_labels == 1 or n_samples < min_samples_required)
     
-    def _get_leaf_value(self,y):
-        '''
-        arguments : 
-        y ::: array (n_samples) :: labels array 
-        returns 
-        most_comon ::: int ::: most common label in y 
-        '''
-        counter = Counter(y)
-        most_common = counter.most_common(1)[0][0]
-        return most_common
-    
     def _set_and_grow(self, X, y, 
                       max_depth = 100, 
                       min_samples_required = 2,
@@ -207,8 +196,9 @@ class TreeNode :
             X_left, X_right = self._split(X)
             y_left, y_right = self._split_labels(y,X) 
             # set left/right nodes 
-            self.left_node = TreeNode(depth = self.depth + 1)
-            self.right_node = TreeNode(depth = self.depth +1)
+            if self.task_type == 'classification' : 
+                self.left_node = ClassifNode(depth = self.depth + 1)           
+                self.right_node = ClassifNode(depth = self.depth +1)
             # grow left and right nodes 
             self.left_node._set_and_grow(X_left,y_left,
                                          max_depth= max_depth,
@@ -218,7 +208,31 @@ class TreeNode :
                                           max_depth = max_depth,
                                           min_samples_required = min_samples_required,
                                           randomized_features = randomized_features)
-                     
+
+class ClassifNode(TreeNode):
+    def __init__(self,left_node = None, right_node = None, value = None, 
+                 spliting_feature = None, spliting_threshold = None, 
+                 depth = 0):
+        super().__init__(left_node = left_node, 
+                         right_node = right_node, 
+                         value = value,
+                         spliting_feature = spliting_feature, 
+                         spliting_threshold = spliting_threshold,
+                         depth = depth)
+        self.method = entropy
+        self.task_type = 'classification'
+    
+    def _get_leaf_value(self,y):
+        '''
+        arguments : 
+        y ::: array (n_samples) :: labels array 
+        returns 
+        most_comon ::: int ::: most common label in y 
+        '''
+        counter = Counter(y)
+        most_common = counter.most_common(1)[0][0]
+        return most_common   
+                   
 class TreeClassifier : 
     def __init__(self, min_sample_split = 2,max_depth = 100, 
                  n_features = None, randomized_features = None):
@@ -240,7 +254,7 @@ class TreeClassifier :
         X ::: array (n_samples, n_features) ::: 
         y ::: array (nsamples) ::: 
         '''
-        root_node = TreeNode(depth = 0)
+        root_node = ClassifNode(depth = 0)
         self.root = root_node
         self.root._set_and_grow(X,y,max_depth= self.max_depth,
                                 min_samples_required= self.min_sample_split,
