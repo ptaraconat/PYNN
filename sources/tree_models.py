@@ -8,6 +8,9 @@ def entropy(y):
     ps = hist/len(y)
     return -np.sum([p * np.log2(p) for p in ps if p > 0])
 
+def variance(y):
+    return np.var(y)
+
 class TreeNode : 
     def __init__(self,left_node = None, right_node = None, value = None, 
                  spliting_feature = None, spliting_threshold = None, 
@@ -199,6 +202,9 @@ class TreeNode :
             if self.task_type == 'classification' : 
                 self.left_node = ClassifNode(depth = self.depth + 1)           
                 self.right_node = ClassifNode(depth = self.depth +1)
+            if self.task_type == 'regression' : 
+                self.left_node = RegressionNode(depth = self.depth + 1)           
+                self.right_node = RegressionNode(depth = self.depth +1) 
             # grow left and right nodes 
             self.left_node._set_and_grow(X_left,y_left,
                                          max_depth= max_depth,
@@ -232,10 +238,33 @@ class ClassifNode(TreeNode):
         counter = Counter(y)
         most_common = counter.most_common(1)[0][0]
         return most_common   
-                   
-class TreeClassifier : 
+
+class RegressionNode(TreeNode):
+    def __init__(self,left_node = None, right_node = None, value = None, 
+                 spliting_feature = None, spliting_threshold = None, 
+                 depth = 0):
+        super().__init__(left_node = left_node, 
+                         right_node = right_node, 
+                         value = value,
+                         spliting_feature = spliting_feature, 
+                         spliting_threshold = spliting_threshold,
+                         depth = depth)
+        self.method = variance
+        self.task_type = 'regression'
+    
+    def _get_leaf_value(self,y):
+        '''
+        arguments : 
+        y ::: array (n_samples) :: labels array 
+        returns 
+        mean_value ::: int ::: mean y value  
+        '''
+        mean_value = np.mean(y)
+        return mean_value 
+        
+class TreeModel : 
     def __init__(self, min_sample_split = 2,max_depth = 100, 
-                 n_features = None, randomized_features = None):
+                 n_features = None, randomized_features = None):    
         '''
         arguments 
         min_samples_split ::: int :::
@@ -247,15 +276,13 @@ class TreeClassifier :
         self.n_features = n_features
         self.randomized_features = randomized_features
         self.root = None 
-        
+    
     def fit(self,X,y):
         '''
         arguments 
         X ::: array (n_samples, n_features) ::: 
         y ::: array (nsamples) ::: 
         '''
-        root_node = ClassifNode(depth = 0)
-        self.root = root_node
         self.root._set_and_grow(X,y,max_depth= self.max_depth,
                                 min_samples_required= self.min_sample_split,
                                 randomized_features = self.randomized_features)
@@ -272,5 +299,36 @@ class TreeClassifier :
             val_tmp = self.root._data_flow(x_sample)
             result.append(val_tmp)
         return np.asarray(result)
+           
+class TreeClassifier(TreeModel): 
+    def __init__(self, min_sample_split = 2,max_depth = 100, 
+                 n_features = None, randomized_features = None):
+        '''
+        arguments 
+        min_samples_split ::: int :::
+        max_depth ::: int ::: 
+        n_features ::: int ::: 
+        '''
+        super().__init__(min_sample_split = min_sample_split,
+                         max_depth = max_depth,
+                         n_features = n_features,
+                         randomized_features = randomized_features)
+        self.root = ClassifNode(depth = 0)
+        
+class TreeRegressor(TreeModel): 
+    def __init__(self, min_sample_split = 2,max_depth = 100, 
+                 n_features = None, randomized_features = None):
+        '''
+        arguments 
+        min_samples_split ::: int :::
+        max_depth ::: int ::: 
+        n_features ::: int ::: 
+        '''
+        super().__init__(min_sample_split = min_sample_split,
+                         max_depth = max_depth,
+                         n_features = n_features,
+                         randomized_features = randomized_features)
+        self.root = RegressionNode(depth = 0)
+        
 
   
