@@ -16,4 +16,5 @@ model = TreeRegressor(min_sample_split = 5)
 model.fit(X,Y)
 Y_hat = model.predict(X)
 
+print(Y_hat)
 print(r_regression(Y,Y_hat)[0]**2.)

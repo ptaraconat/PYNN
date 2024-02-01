@@ -1,6 +1,6 @@
 import sys as sys 
 sys.path.append('../')
-from sources.random_forest import RandomForestRegressor
+from sources.random_forest import GradientBoostedTrees
 import numpy as np 
 import matplotlib.pyplot as plt 
 from sklearn.feature_selection import r_regression
@@ -12,8 +12,8 @@ X = np.expand_dims(X,1)
 Y = np.power(X,2)#+np.random.normal(loc=0.1, scale=4.0)
 
 # model 
-model = RandomForestRegressor(n_trees = 100,min_samples_splits = 2)
-model.fit(X,Y)
+model = GradientBoostedTrees(n_trees = 100,min_samples_splits = 10, learning_rate= 0.1)
+res = model.fit(X,Y)
 Y_hat = model.predict(X)
 
 print(Y_hat)
