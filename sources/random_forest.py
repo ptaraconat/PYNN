@@ -1,11 +1,19 @@
 import numpy as np 
-from sources.tree_models import TreeClassifier
+from sources.tree_models import TreeClassifier, TreeRegressor
 from collections import Counter
 # Resources : P. Loeber
 def bootstrap_sample(X,y):
 	n_samples = X.shape[0]
 	idxs = np.random.choice(n_samples,size = n_samples, replace = True)
 	return X[idxs,:], y[idxs]
+
+def most_common(y):
+    counter = Counter(y)
+    most_common = counter.most_common(1)[0][0]
+    return most_common
+
+def average(y):
+    return np.mean(y)
 
 class RandomForest:
     def __init__(self,n_trees = 100,min_samples_splits = 100, 
@@ -34,9 +42,7 @@ class RandomForest:
         '''
         self.trees = []
         for _ in range(self.n_trees):
-            tree = TreeClassifier(min_sample_split = self.min_samples_splits, 
-                                  max_depth = self.max_depth,  
-                                  randomized_features = self.n_feats)
+            tree = self._init_tree()
             X_sample, y_sample = bootstrap_sample(X,y)
             tree.fit(X_sample,y_sample)
             self.trees.append(tree)
@@ -51,7 +57,61 @@ class RandomForest:
         tree_preds = np.transpose(np.array([tree.predict(X) for tree in self.trees]))
         labels = []
         for i in range(np.size(tree_preds,0)):
-            counter = Counter(tree_preds[i,:])
-            most_common = counter.most_common(1)[0][0]
-            labels.append(most_common)
+            labels.append(self.gather(tree_preds[i,:]))
         return np.asarray(labels)
+    
+class RandomForestClassifier(RandomForest):
+    def __init__(self,n_trees = 100,min_samples_splits = 100, 
+                 max_depth = 100,n_feats = None):
+        '''
+        arguments 
+        n_tress ::: int ::: number of trees in Random Forest 
+        min_samples_splits ::: int ::: min number of samples in tree leafs
+        max_depth ::: int ::: maximal depth of trees 
+        n_feats ::: int ::: number of random features used for
+        finding the best node splitting 
+        '''
+        super().__init__(n_trees = n_trees,
+                         min_samples_splits = min_samples_splits,
+                         max_depth = max_depth,
+                         n_feats = n_feats)
+        self.gather = most_common
+        
+    def _init_tree(self): 
+        '''
+        initialise a decision from the RandomForest arguments
+        returns :
+        tree ::: TreeNode :::  
+        '''
+        tree = TreeClassifier(min_sample_split = self.min_samples_splits, 
+                              max_depth = self.max_depth,  
+                              randomized_features = self.n_feats)
+        return tree 
+
+class RandomForestRegressor(RandomForest):
+    def __init__(self,n_trees = 100,min_samples_splits = 100, 
+                 max_depth = 100,n_feats = None):
+        '''
+        arguments 
+        n_tress ::: int ::: number of trees in Random Forest 
+        min_samples_splits ::: int ::: min number of samples in tree leafs
+        max_depth ::: int ::: maximal depth of trees 
+        n_feats ::: int ::: number of random features used for
+        finding the best node splitting 
+        '''
+        super().__init__(n_trees = n_trees,
+                         min_samples_splits = min_samples_splits,
+                         max_depth = max_depth,
+                         n_feats = n_feats)
+        self.gather = average
+    
+    def _init_tree(self): 
+        '''
+        initialise a decision from the RandomForest arguments
+        returns :
+        tree ::: TreeNode :::  
+        '''
+        tree = TreeRegressor(min_sample_split = self.min_samples_splits, 
+                             max_depth = self.max_depth,  
+                             randomized_features = self.n_feats)
+        return tree 

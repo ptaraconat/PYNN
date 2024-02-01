@@ -3,6 +3,7 @@ sys.path.append('../../')
 from PYNN.sources.neural_net import Dense, Model, Adam, SGD
 import numpy as np 
 import matplotlib.pyplot as plt 
+from sklearn.feature_selection import r_regression
 
 # Data 
 Ndata = 100
@@ -35,3 +36,5 @@ plt.close()
 #plt.savefig('err.png',format = 'png')
 plt.close()
 print(Y)
+
+print(r_regression(Y,-Y_hat))
