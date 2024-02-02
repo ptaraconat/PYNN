@@ -7,6 +7,15 @@ def bootstrap_sample(X,y):
 	idxs = np.random.choice(n_samples,size = n_samples, replace = True)
 	return X[idxs,:], y[idxs]
 
+def bootstrap_sample_wweights(X,y,weights,portion):
+    n_samples = X.shape[0]
+    n_drawn = np.int(np.round(n_samples*portion))
+    idxs = np.random.choice(n_samples, 
+                           size = n_drawn, 
+                           replace = True, 
+                           p = weights)
+    return X[idxs,:], y[idxs], weights[idxs]
+
 def most_common(y):
     counter = Counter(y)
     most_common = counter.most_common(1)[0][0]
@@ -163,7 +172,77 @@ class GradientBoostedTrees(RandomForest):
             else :
                 predictions += self.learning_rate * tree.predict(X)
         return predictions      
-  
+
+class AdaBoostedTree(RandomForest):
+    def __init__(self,n_trees = 100):
+        '''
+        arguments 
+        n_tress ::: int ::: number of trees in Random Forest 
+        '''
+        super().__init__(n_trees = n_trees,
+                         min_samples_splits = 2,
+                         max_depth = 1,
+                         n_feats = None)
+        self.tree_weights = []
+    
+    def fit(self,X,y):
+        '''
+        arguments 
+        X ::: array (n_samples, n_features) ::: Model input data 
+        y ::: array (n_samples) ::: labels array 
+        updates ::: 
+        self.trees ::: list (n_trees) of decision trees ::: 
+        '''
+        n_samples, n_features = X.shape
+        # set n_feats in order randomized features in trees 
+        self.n_feats = np.int(np.round(n_features*0.8))
+        # init samples weights 
+        weights = np.ones(n_samples)*(1/n_samples)
+        for i in range(self.n_trees): 
+            # samples data 
+            X_samp, y_samp, weights_samp = bootstrap_sample_wweights(X,y,weights,0.8)
+            # tree model 
+            tree = TreeClassifier(min_sample_split= self.min_samples_splits,
+                                  max_depth = self.max_depth,
+                                  randomized_features = self.n_feats)
+            tree.fit(X_samp,y_samp)
+            # update samples weights and set model weight
+            y_pred = tree.predict(X)
+            total_error = np.sum((y_pred != y) * weights)
+            # calc tree weight
+            tree_weight = 0.5* np.log((1-total_error)/(total_error))
+            # calc new samples weights 
+            ## incorrectly classified case 
+            bool_tmp = y_pred != y
+            idxs = np.where(bool_tmp)
+            weights[idxs] = weights[idxs]*np.exp(tree_weight)
+            ## correctly classified case 
+            idxs = np.where(np.logical_not(bool_tmp))
+            weights[idxs] = weights[idxs]*np.exp(-1.*tree_weight)
+            # Normalize sample weights  
+            weights /= np.sum(weights)
+            # Update forest 
+            self.trees.append(tree)
+            self.tree_weights.append(tree_weight)
+            #
+            print(total_error)
+    
+    def predict(self,X):
+        '''
+        arguments 
+        X ::: array (n_samples, n_features) ::: Model input data
+        returns 
+        predictions ::: array (n_samples) ::: predictions
+        '''
+        n_samples = X.shape[0]
+        predictions = np.transpose(np.asarray([weight*(2*tree.predict(X)-1)
+                                               for weight,tree in zip(self.tree_weights,self.trees)]))
+        predictions = np.sign(np.sum(predictions,axis = 1)) > 0
+        
+        return predictions #np.where(predictions >= 0.5, 1, 0)
+        
+               
+        
 class RandomForestClassifier(RandomForest):
     def __init__(self,n_trees = 100,min_samples_splits = 100, 
                  max_depth = 100,n_feats = None):
